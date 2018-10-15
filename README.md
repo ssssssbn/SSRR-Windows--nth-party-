@@ -3,8 +3,8 @@ ShadowsocksR for Windows
 
 基于[SSRR-CGDF](https://github.com/CGDF-Github/SSRR-Windows)5.1.6（还未发布...）乱做了修改。
 比如干掉了[360]的检测，360（全家桶）用户可以使用喽，
-比如去掉了托盘右键菜单失效的项， 
-比如从[SS-celeron533](https://github.com/shadowsocks/shadowsocks-windows)那里偷来了热键代码
+比如去掉了托盘右键菜单失效的项，
+比如从[SS-celeron533](https://github.com/shadowsocks/shadowsocks-windows)那里偷来了热键代码，
 比如随便乱改了，
 比如比如。
 如有冒犯的地方，请留言我删除，本文盲法盲在此道歉：对不起！
