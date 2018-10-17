@@ -10,7 +10,7 @@ namespace Shadowsocks.Controller
 {
     public class UpdateChecker
     {
-        private const string UpdateURL = "https://raw.githubusercontent.com/CGDF-GitHub/shadowsocksrr-csharp/master/shadowsocks-csharp/ssr-win-4.0.xml";
+        private const string UpdateURL = "https://raw.githubusercontent.com/CGDF-Github/SSRR-Windows/master/shadowsocks-csharp/ssr-win-4.0.xml";
 
         public string LatestVersionNumber;
         public string LatestVersionURL;
