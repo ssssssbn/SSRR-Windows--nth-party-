@@ -327,12 +327,12 @@ namespace Shadowsocks.View {
                 SelectRandomItem = CreateMenuItem("Load balance", new EventHandler(SelectRandomItem_Click)),
                 CreateMenuItem("Global settings...", new EventHandler(Setting_Click)),
                 CreateMenuItem("Port settings...", new EventHandler(ShowPortMapItem_Click)),
-                UpdateItem = CreateMenuItem("Update available", new EventHandler(UpdateItem_Clicked)),
                 new MenuItem("-"),
                 hotKeyItem = CreateMenuItem("Edit Hotkeys...", new EventHandler(hotKeyItem_Click)),
                 CreateMenuItem("Reset password...", new EventHandler(ResetPasswordItem_Click)),
                 CreateMenuItem("Gen custom QRCode...", new EventHandler(showURLFromQRCode)),
                 CreateMenuItem("Show logs...", new EventHandler(ShowLogItem_Click)),
+                UpdateItem = CreateMenuItem("Update available", new EventHandler(UpdateItem_Clicked)),
                 //CreateMenuGroup("Help", new MenuItem[] {
                 //    CreateMenuItem("Check update", new EventHandler(CheckUpdate_Click)),
                 //    CreateMenuItem("Show logs...", new EventHandler(ShowLogItem_Click)),
