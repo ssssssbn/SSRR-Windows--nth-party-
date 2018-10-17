@@ -791,7 +791,7 @@ namespace Shadowsocks.View
 
         private void UpButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_UpButton.Interval = 200;
+            timer_UpButton.Interval = 100;
             timer_UpButton.Enabled = true;
         }
 
@@ -814,7 +814,7 @@ namespace Shadowsocks.View
 
         private void DownButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_DownButton.Interval = 200;
+            timer_DownButton.Interval = 100;
             timer_DownButton.Enabled = true;
         }
 
@@ -837,7 +837,7 @@ namespace Shadowsocks.View
 
         private void DeleteButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_DeleteButton.Interval = 300;
+            timer_DeleteButton.Interval = 200;
             timer_DeleteButton.Enabled = true;
         }
 

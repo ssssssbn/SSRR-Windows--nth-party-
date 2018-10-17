@@ -778,12 +778,10 @@
             // 
             // timer_UpButton
             // 
-            this.timer_UpButton.Interval = 200;
             this.timer_UpButton.Tick += new System.EventHandler(this.timer_UpButton_Tick);
             // 
             // timer_DownButton
             // 
-            this.timer_DownButton.Interval = 200;
             this.timer_DownButton.Tick += new System.EventHandler(this.timer_DownButton_Tick);
             // 
             // timer_DeleteButton
