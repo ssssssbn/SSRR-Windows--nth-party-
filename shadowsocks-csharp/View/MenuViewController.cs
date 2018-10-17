@@ -1178,16 +1178,16 @@ namespace Shadowsocks.View {
                     if (count > 0)
                     {
                         ShowConfigForm(true);
+                        Clipboard.Clear();
                         return true;
                     }
-                    else
-                        if (IsShowBalloonTip)
-                            ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No SS(R) links in clipboard."), ToolTipIcon.Error, 3);
                 }
             }
             catch {
 
             }
+            if (IsShowBalloonTip)
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No SS(R) links in clipboard."), ToolTipIcon.Error, 3);
             return false;
         }
 
