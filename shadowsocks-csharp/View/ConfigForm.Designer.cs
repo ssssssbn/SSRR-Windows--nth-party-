@@ -101,8 +101,8 @@
             // 
             // DeleteButton
             // 
-            this.DeleteButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.DeleteButton.Location = new System.Drawing.Point(130, 0);
+            this.DeleteButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.DeleteButton.Location = new System.Drawing.Point(127, 0);
             this.DeleteButton.Margin = new System.Windows.Forms.Padding(0);
             this.DeleteButton.Name = "DeleteButton";
             this.DeleteButton.Size = new System.Drawing.Size(120, 34);
@@ -113,7 +113,8 @@
             // 
             // AddButton
             // 
-            this.AddButton.Location = new System.Drawing.Point(0, 0);
+            this.AddButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.AddButton.Location = new System.Drawing.Point(2, 0);
             this.AddButton.Margin = new System.Windows.Forms.Padding(0);
             this.AddButton.Name = "AddButton";
             this.AddButton.Size = new System.Drawing.Size(120, 34);
@@ -376,6 +377,7 @@
             // 
             // CheckObfsUDP
             // 
+            this.CheckObfsUDP.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.CheckObfsUDP.AutoSize = true;
             this.CheckObfsUDP.Location = new System.Drawing.Point(108, 405);
             this.CheckObfsUDP.Name = "CheckObfsUDP";
@@ -411,6 +413,7 @@
             // 
             // CheckUDPoverUDP
             // 
+            this.CheckUDPoverUDP.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.CheckUDPoverUDP.AutoSize = true;
             this.CheckUDPoverUDP.Location = new System.Drawing.Point(108, 383);
             this.CheckUDPoverUDP.Name = "CheckUDPoverUDP";
@@ -457,6 +460,7 @@
             // 
             // CheckTCPoverUDP
             // 
+            this.CheckTCPoverUDP.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.CheckTCPoverUDP.AutoSize = true;
             this.CheckTCPoverUDP.Location = new System.Drawing.Point(108, 361);
             this.CheckTCPoverUDP.Name = "CheckTCPoverUDP";
@@ -483,8 +487,7 @@
             "auth_chain_e",
             "auth_chain_f",
             "auth_akarin_rand",
-            "auth_akarin_spec_a"
-            });
+            "auth_akarin_spec_a"});
             this.TCPProtocolComboBox.Location = new System.Drawing.Point(108, 117);
             this.TCPProtocolComboBox.Margin = new System.Windows.Forms.Padding(3, 3, 3, 7);
             this.TCPProtocolComboBox.Name = "TCPProtocolComboBox";
@@ -532,6 +535,7 @@
             // 
             // checkAdvSetting
             // 
+            this.checkAdvSetting.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.checkAdvSetting.AutoSize = true;
             this.checkAdvSetting.Location = new System.Drawing.Point(6, 312);
             this.checkAdvSetting.Name = "checkAdvSetting";
@@ -659,8 +663,8 @@
             this.tableLayoutPanel4.AutoSize = true;
             this.tableLayoutPanel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tableLayoutPanel4.ColumnCount = 2;
-            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel4.Controls.Add(this.DownButton, 1, 1);
             this.tableLayoutPanel4.Controls.Add(this.UpButton, 0, 1);
             this.tableLayoutPanel4.Controls.Add(this.DeleteButton, 1, 0);
@@ -670,15 +674,15 @@
             this.tableLayoutPanel4.Margin = new System.Windows.Forms.Padding(0, 5, 0, 0);
             this.tableLayoutPanel4.Name = "tableLayoutPanel4";
             this.tableLayoutPanel4.RowCount = 2;
-            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel4.Size = new System.Drawing.Size(250, 68);
             this.tableLayoutPanel4.TabIndex = 8;
             // 
             // DownButton
             // 
-            this.DownButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.DownButton.Location = new System.Drawing.Point(130, 34);
+            this.DownButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.DownButton.Location = new System.Drawing.Point(127, 34);
             this.DownButton.Margin = new System.Windows.Forms.Padding(0);
             this.DownButton.Name = "DownButton";
             this.DownButton.Size = new System.Drawing.Size(120, 34);
@@ -689,7 +693,8 @@
             // 
             // UpButton
             // 
-            this.UpButton.Location = new System.Drawing.Point(0, 34);
+            this.UpButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.UpButton.Location = new System.Drawing.Point(2, 34);
             this.UpButton.Margin = new System.Windows.Forms.Padding(0);
             this.UpButton.Name = "UpButton";
             this.UpButton.Size = new System.Drawing.Size(120, 34);
@@ -734,10 +739,10 @@
             // 
             // MyCancelButton
             // 
-            this.MyCancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.MyCancelButton.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.MyCancelButton.AutoSize = true;
             this.MyCancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.MyCancelButton.Location = new System.Drawing.Point(212, 3);
+            this.MyCancelButton.Location = new System.Drawing.Point(199, 3);
             this.MyCancelButton.Margin = new System.Windows.Forms.Padding(3, 3, 0, 0);
             this.MyCancelButton.Name = "MyCancelButton";
             this.MyCancelButton.Size = new System.Drawing.Size(155, 33);
@@ -748,10 +753,10 @@
             // 
             // OKButton
             // 
+            this.OKButton.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.OKButton.AutoSize = true;
             this.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.OKButton.Dock = System.Windows.Forms.DockStyle.Left;
-            this.OKButton.Location = new System.Drawing.Point(3, 3);
+            this.OKButton.Location = new System.Drawing.Point(14, 3);
             this.OKButton.Margin = new System.Windows.Forms.Padding(3, 3, 3, 0);
             this.OKButton.Name = "OKButton";
             this.OKButton.Size = new System.Drawing.Size(155, 33);

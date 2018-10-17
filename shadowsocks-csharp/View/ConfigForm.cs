@@ -683,6 +683,7 @@ namespace Shadowsocks.View
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
                 ((TextBox)sender).SelectAll();
+                Clipboard.SetDataObject(((TextBox)sender).Text);
             }
         }
 
