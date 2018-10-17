@@ -16,6 +16,7 @@ namespace Shadowsocks.View
     {
         public static bool _IsModified = false;
         private HotkeyConfig _TempHotkeyConfig;
+        private string _tmpHotkeystr = "";
         private readonly ShadowsocksController _controller;
 
         // this is a copy of hotkey configuration that we are working on
@@ -110,6 +111,8 @@ namespace Shadowsocks.View
         /// </summary>
         private void HotkeyDown(object sender, KeyEventArgs e)
         {
+            if (_tmpHotkeystr == "")
+                _tmpHotkeystr = ((TextBox)sender).Text;
             StringBuilder sb = new StringBuilder();
             //Combination key only
             if (e.Modifiers != 0)
@@ -157,13 +160,14 @@ namespace Shadowsocks.View
             var content = tb.Text.TrimEnd();
             if (content.Length >= 1 && content[content.Length - 1] == '+')
             {
-                tb.Text = "";
+                tb.Text = _tmpHotkeystr;
             }
-            if (tb.Text != "") 
+            if (tb.Text != _tmpHotkeystr) 
             {
                 HotkeySettingsForm._IsModified = true;
                 TryRegAllHotkeys();
             }
+            _tmpHotkeystr = "";
         }
 
         private void CancelButton_Click(object sender, EventArgs e)

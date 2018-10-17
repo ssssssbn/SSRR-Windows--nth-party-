@@ -803,7 +803,7 @@ namespace Shadowsocks.View
             Model.Server.GetForwardServerRef().GetConnections().CloseAll();
         }
 
-        private void DisconnectIfUnenableOrNonrandom(object sender, EventArgs e)
+        private void DisconnectIfUnenableOrNonrandom()
         {
             Configuration config = controller.GetCurrentConfiguration();
             for (int id = 0; id < config.configs.Count; ++id)
@@ -962,7 +962,7 @@ namespace Shadowsocks.View
                 {
                     Configuration config = controller.GetCurrentConfiguration();
                     controller.SelectServerIndex(id);
-                    DisconnectIfUnenableOrNonrandom(null,null);
+                    DisconnectIfUnenableOrNonrandom();
                     //Disconnect_Click(null, null);
                 }
                 if (ServerDataGrid.Columns[e.ColumnIndex].Name == "Group")
@@ -992,6 +992,8 @@ namespace Shadowsocks.View
                     Configuration config = controller.GetCurrentConfiguration();
                     Server server = config.configs[id];
                     server.setEnable(!server.isEnable());
+                    if (!server.isEnable())
+                        server.GetConnections().CloseAll();
                     controller.SelectServerIndex(config.index);
                 }
                 ServerDataGrid[0, e.RowIndex].Selected = true;
