@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.panel2 = new System.Windows.Forms.Panel();
             this.DeleteButton = new System.Windows.Forms.Button();
             this.AddButton = new System.Windows.Forms.Button();
@@ -77,6 +78,9 @@
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.MyCancelButton = new System.Windows.Forms.Button();
             this.OKButton = new System.Windows.Forms.Button();
+            this.timer_UpButton = new System.Windows.Forms.Timer(this.components);
+            this.timer_DownButton = new System.Windows.Forms.Timer(this.components);
+            this.timer_DeleteButton = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.PictureQRcode)).BeginInit();
             this.tableLayoutPanel2.SuspendLayout();
             this.ServerGroupBox.SuspendLayout();
@@ -110,6 +114,8 @@
             this.DeleteButton.Text = "&Delete";
             this.DeleteButton.UseVisualStyleBackColor = true;
             this.DeleteButton.Click += new System.EventHandler(this.DeleteButton_Click);
+            this.DeleteButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DeleteButton_MouseDown);
+            this.DeleteButton.MouseUp += new System.Windows.Forms.MouseEventHandler(this.DeleteButton_MouseUp);
             // 
             // AddButton
             // 
@@ -351,7 +357,7 @@
             this.TextLink.TabIndex = 27;
             this.TextLink.WordWrap = false;
             this.TextLink.Enter += new System.EventHandler(this.TextBox_Enter);
-            this.TextLink.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TextBox_MouseUp);
+            this.TextLink.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TextLinkTextBox_MouseUp);
             // 
             // RemarksTextBox
             // 
@@ -433,6 +439,7 @@
             this.LabelNote.Size = new System.Drawing.Size(179, 12);
             this.LabelNote.TabIndex = 29;
             this.LabelNote.Text = "NOT all server support belows";
+            this.LabelNote.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TextLinkTextBox_MouseUp);
             // 
             // PasswordLabel
             // 
@@ -690,6 +697,8 @@
             this.DownButton.Text = "Down";
             this.DownButton.UseVisualStyleBackColor = true;
             this.DownButton.Click += new System.EventHandler(this.DownButton_Click);
+            this.DownButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DownButton_MouseDown);
+            this.DownButton.MouseUp += new System.Windows.Forms.MouseEventHandler(this.DownButton_MouseUp);
             // 
             // UpButton
             // 
@@ -702,6 +711,8 @@
             this.UpButton.Text = "Up";
             this.UpButton.UseVisualStyleBackColor = true;
             this.UpButton.Click += new System.EventHandler(this.UpButton_Click);
+            this.UpButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.UpButton_MouseDown);
+            this.UpButton.MouseUp += new System.Windows.Forms.MouseEventHandler(this.UpButton_MouseUp);
             // 
             // tableLayoutPanel5
             // 
@@ -764,6 +775,21 @@
             this.OKButton.Text = "OK";
             this.OKButton.UseVisualStyleBackColor = true;
             this.OKButton.Click += new System.EventHandler(this.OKButton_Click);
+            // 
+            // timer_UpButton
+            // 
+            this.timer_UpButton.Interval = 200;
+            this.timer_UpButton.Tick += new System.EventHandler(this.timer_UpButton_Tick);
+            // 
+            // timer_DownButton
+            // 
+            this.timer_DownButton.Interval = 200;
+            this.timer_DownButton.Tick += new System.EventHandler(this.timer_DownButton_Tick);
+            // 
+            // timer_DeleteButton
+            // 
+            this.timer_DeleteButton.Interval = 200;
+            this.timer_DeleteButton.Tick += new System.EventHandler(this.timer_DeleteButton_Tick);
             // 
             // ConfigForm
             // 
@@ -854,6 +880,9 @@
         private System.Windows.Forms.Label labelProtocolParam;
         private System.Windows.Forms.TextBox TextProtocolParam;
         private System.Windows.Forms.CheckBox IPLabel;
+        private System.Windows.Forms.Timer timer_UpButton;
+        private System.Windows.Forms.Timer timer_DownButton;
+        private System.Windows.Forms.Timer timer_DeleteButton;
     }
 }
 

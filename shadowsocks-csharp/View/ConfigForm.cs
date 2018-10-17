@@ -29,6 +29,8 @@ namespace Shadowsocks.View
 
         private string _SelectedID = null;
 
+        private bool buttonlongpress = false;
+
         public ConfigForm(ShadowsocksController controller, UpdateChecker updateChecker, int focusIndex)
         {
             this.Font = System.Drawing.SystemFonts.MessageBoxFont;
@@ -678,7 +680,7 @@ namespace Shadowsocks.View
             ((TextBox)sender).SelectAll();
         }
 
-        private void TextBox_MouseUp(object sender, MouseEventArgs e)
+        private void TextLinkTextBox_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
@@ -785,6 +787,75 @@ namespace Shadowsocks.View
             {
                 IPTextBox.UseSystemPasswordChar = true;
             }
+        }
+
+        private void UpButton_MouseDown(object sender, MouseEventArgs e)
+        {
+            timer_UpButton.Interval = 200;
+            timer_UpButton.Enabled = true;
+        }
+
+        private void UpButton_MouseUp(object sender, MouseEventArgs e)
+        {
+            timer_UpButton.Enabled = false;
+            if (buttonlongpress)
+            {
+                buttonlongpress = false;
+                this.UpButton.Click += this.UpButton_Click;
+            }
+        }
+
+        private void timer_UpButton_Tick(object sender, EventArgs e)
+        {
+            buttonlongpress = true;
+            this.UpButton.Click -= this.UpButton_Click;
+            UpButton_Click(null, null);
+        }
+
+        private void DownButton_MouseDown(object sender, MouseEventArgs e)
+        {
+            timer_DownButton.Interval = 200;
+            timer_DownButton.Enabled = true;
+        }
+
+        private void DownButton_MouseUp(object sender, MouseEventArgs e)
+        {
+            timer_DownButton.Enabled = false;
+            if (buttonlongpress)
+            {
+                buttonlongpress = false;
+                this.DownButton.Click += this.DownButton_Click;
+            }
+        }
+
+        private void timer_DownButton_Tick(object sender, EventArgs e)
+        {
+            buttonlongpress = true;
+            this.DownButton.Click -= this.DownButton_Click;
+            DownButton_Click(null, null);
+        }
+
+        private void DeleteButton_MouseDown(object sender, MouseEventArgs e)
+        {
+            timer_DeleteButton.Interval = 300;
+            timer_DeleteButton.Enabled = true;
+        }
+
+        private void DeleteButton_MouseUp(object sender, MouseEventArgs e)
+        {
+            timer_DeleteButton.Enabled = false;
+            if (buttonlongpress)
+            {
+                buttonlongpress = false;
+                this.DeleteButton.Click += this.DeleteButton_Click;
+            }
+        }
+
+        private void timer_DeleteButton_Tick(object sender, EventArgs e)
+        {
+            buttonlongpress = true;
+            this.DeleteButton.Click -= this.DeleteButton_Click;
+            DeleteButton_Click(null, null);
         }
     }
 }
