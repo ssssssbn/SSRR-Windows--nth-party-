@@ -417,6 +417,8 @@ namespace Shadowsocks.View
                         {
                             if (serverSpeedLog.avgConnectTime >= 0)
                                 SetCellText(cell, serverSpeedLog.avgConnectTime / 1000);
+                            else if (server.latency >0)//!= Shadowsocks.Model.Server.LATENCY_ERROR && server.latency != Shadowsocks.Model.Server.LATENCY_PENDING && server.latency != Shadowsocks.Model.Server.LATENCY_TESTING) 
+                                SetCellText(cell, server.latency);
                             else
                                 SetCellText(cell, "-");
                         }
@@ -1057,7 +1059,8 @@ namespace Shadowsocks.View
             {
                 config.IsServerLogFormTopmost = this.TopMost;
             }
-            controller.SetCurrentConfiguration(config);
+            controller.SyncConfigFormServerLogForm(config);
+
             controller.ConfigChanged -= controller_ConfigChanged;
             Thread thread = workerThread;
             workerThread = null;

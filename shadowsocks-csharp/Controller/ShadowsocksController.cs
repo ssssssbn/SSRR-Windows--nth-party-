@@ -27,7 +27,7 @@ namespace Shadowsocks.Controller
         private Listener _listener;
         private List<Listener> _port_map_listener;
         private PACServer _pacServer;
-        public static Configuration _config;
+        private Configuration _config;
         private ServerTransferTotal _transfer;
         public IPRangeSet _rangeSet;
 #if !_CONSOLE
@@ -111,10 +111,11 @@ namespace Shadowsocks.Controller
             return Configuration.Load();
         }
 
-        public void SetCurrentConfiguration(Configuration config)
+        public void SyncConfigFormServerLogForm(Configuration config)
         {
-            _config = config;
-            SaveConfig(_config);
+            _config.ServerLogFormLocation = config.ServerLogFormLocation;
+            _config.IsServerLogFormTopmost = config.IsServerLogFormTopmost;
+            SaveConfig(_config, false);
         }
 
         public Configuration GetCurrentConfiguration()
@@ -202,7 +203,7 @@ namespace Shadowsocks.Controller
             return false;
         }
 
-        public void SaveServersConfig(Configuration config)
+        public void SaveServersConfig(Configuration config, bool reload = true)
         {
             List<Server> missingServers = MergeConfiguration(_config, config.configs);
             _config.CopyFrom(config);
@@ -210,7 +211,7 @@ namespace Shadowsocks.Controller
             {
                 s.GetConnections().CloseAll();
             }
-            SelectServerIndex(_config.index);
+            SelectServerIndex(_config.index, reload);
         }
 
         public void SaveServersPortMap(Configuration config)
@@ -220,6 +221,14 @@ namespace Shadowsocks.Controller
             _config.FlushPortMapCache();
         }
 
+        private bool IsServerExisting(Server server)
+        {
+            for (int i = 0; i < _config.configs.Count; i++) 
+                if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port)
+                    return true;
+            return false;
+        }
+
         public bool AddServerBySSURL(string ssURL, string force_group = null, bool toLast = false)
         {
             if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase) || ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
@@ -227,6 +236,8 @@ namespace Shadowsocks.Controller
                 try
                 {
                     var server = new Server(ssURL, force_group);
+                    if (IsServerExisting(server))
+                        return false;
                     if (toLast)
                     {
                         _config.configs.Add(server);
@@ -301,10 +312,10 @@ namespace Shadowsocks.Controller
             SaveConfig(_config);
         }
 
-        public void SelectServerIndex(int index)
+        public void SelectServerIndex(int index, bool reload = true)
         {
             _config.index = index;
-            SaveConfig(_config);
+            SaveConfig(_config, reload);
         }
 
         public void Stop()
@@ -543,9 +554,15 @@ namespace Shadowsocks.Controller
         }
 
 
-        protected void SaveConfig(Configuration newConfig)
+        protected void SaveConfig(Configuration newConfig, bool reload = true)
         {
             Configuration.Save(newConfig);
+            if(reload)
+                Reload();
+        }
+
+        public void JustReload()
+        {
             Reload();
         }
 
@@ -579,20 +596,22 @@ namespace Shadowsocks.Controller
 
         public void ShowConfigForm(int index)
         {
-            if (ShowConfigFormEvent != null)
-            {
-                ShowConfigFormEvent(index, new EventArgs());
-            }
+            //if (ShowConfigFormEvent != null)
+            //{
+                ShowConfigFormEvent?.Invoke(index, new EventArgs());
+            //}
         }
 
         public void SaveHotkeyConfig(HotkeyConfig newConfig)
         {
             _config.hotkey = newConfig;
-            SaveConfig(_config);
-            if (ConfigChanged != null)
-            {
-                ConfigChanged(this, new EventArgs());
-            }
+            SaveConfig(_config, false);
+            ConfigChanged?.Invoke(this, new EventArgs());
+        }
+
+        public void SaveTimerUpdateLatency()
+        {
+            SaveConfig(_config, false);
         }
 
         //public void SaveServerLogFormTopmost(bool enable)

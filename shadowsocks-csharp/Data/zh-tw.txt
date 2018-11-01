@@ -208,6 +208,7 @@ URL=網址
 Group name=組名
 Last Update=最近更新
 Auto update=自動更新
+Updating server subscription.=正在更新服務器訂閱...
 
 # Messages
 

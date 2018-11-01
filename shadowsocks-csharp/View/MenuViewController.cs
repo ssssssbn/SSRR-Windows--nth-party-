@@ -80,6 +80,7 @@ namespace Shadowsocks.View {
         private List<EventParams> eventList = new List<EventParams>();
 
         public static AppBarForm appbarform;
+        public static bool IsCopyLinksToClipboard = false;
         //public static bool appbarformAtStart = false;
 
         public MenuViewController(ShadowsocksController controller)
@@ -120,9 +121,10 @@ namespace Shadowsocks.View {
             timerDelayCheckUpdate.Elapsed += timerDelayCheckUpdate_Elapsed;
             timerDelayCheckUpdate.Start();
 
-            timerUpdateLatency = new System.Timers.Timer(1000.0 * 3);
+            timerUpdateLatency = new System.Timers.Timer(1000.0 * 1);
             timerUpdateLatency.Elapsed += timerUpdateLatency_Elapsed;
-            timerUpdateLatency.Start();
+            if(!_controller.GetCurrentConfiguration().nodeFeedAutoUpdate)
+                timerUpdateLatency.Start();
         }
 
         public void ShownotifyIcontext()
@@ -152,20 +154,25 @@ namespace Shadowsocks.View {
             }
         }
 
-        private void timerUpdateLatency_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
-            timerUpdateLatency.Interval = 1000.0 * 60 * 30;
+        private void timerUpdateLatency_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
             timerUpdateLatency.Stop();
-            try {
+            timerUpdateLatency.Interval = 1000.0 * 60 * 31;
+            try
+            {
                 Configuration configuration = _controller.GetCurrentConfiguration();
-                for (int i = 0; i < configuration.configs.Count; i++) {
-                    var server = configuration.configs[i];
-                    server.tcpingLatency();
+                for (int i = 0; i < configuration.configs.Count; i++)
+                {
+                    configuration.configs[i].tcpingLatency();
                     Utils.ReleaseMemory(true);
                 }
+
             }
-            catch {
+            catch
+            {
                 timerUpdateLatency.Interval = 1000.0 * 60;
             }
+            //_controller.SaveTimerUpdateLatency();
             UpdateServersMenu();
             timerUpdateLatency.Start();
         }
@@ -366,6 +373,8 @@ namespace Shadowsocks.View {
         private void controller_ToggleModeChanged(object sender, EventArgs e) {
             Configuration config = _controller.GetCurrentConfiguration();
             UpdateSysProxyMode(config);
+            if (config.sysProxyMode == (int)ProxyMode.Direct)
+                DisconnectCurrent_Click(null, null);
         }
 
         private void controller_ToggleRuleModeChanged(object sender, EventArgs e) {
@@ -551,7 +560,7 @@ namespace Shadowsocks.View {
                                 }
                             }
                         }
-                        _controller.SaveServersConfig(config);
+                        _controller.SaveServersConfig(config, false);
                     }
                     config = _controller.GetCurrentConfiguration();
                     if (selected_server != null) {
@@ -584,7 +593,7 @@ namespace Shadowsocks.View {
                             }
                         }
                     }
-                    _controller.SaveServersConfig(config);
+                    _controller.SaveServersConfig(config, false);
                 }
             }
 
@@ -601,9 +610,18 @@ namespace Shadowsocks.View {
                 ShowBalloonTip(I18N.GetString("Error"),
                     String.Format(I18N.GetString("Update subscribe {0} failure"), lastGroup), ToolTipIcon.Info, 10000);
             }
-            if (updateSubscribeManager.Next()) {
 
+            if (updateSubscribeManager.Next())
+            {
             }
+            else
+            {
+                _controller.JustReload();
+                timerUpdateLatency.Stop();
+                timerUpdateLatency.Interval = 1000.0 * 1;
+                timerUpdateLatency.Start();
+            }
+
         }
 
         void updateChecker_NewVersionFound(object sender, EventArgs e) {
@@ -679,16 +697,20 @@ namespace Shadowsocks.View {
                     group_name = server.group;
 
                 string latency;
-                if (server.latency == Server.LATENCY_TESTING) {
+                if (server.latency == Server.LATENCY_TESTING)
+                {
                     latency = "[testing]";
                 }
-                else if (server.latency == Server.LATENCY_ERROR) {
+                else if (server.latency == Server.LATENCY_ERROR)
+                {
                     latency = "[error]";
                 }
-                else if (server.latency == Server.LATENCY_PENDING) {
+                else if (server.latency == Server.LATENCY_PENDING)
+                {
                     latency = "[pending]";
                 }
-                else {
+                else
+                {
                     latency = "[" + server.latency.ToString() + "ms]";
                 }
                 MenuItem item = new MenuItem(latency + " " + server.FriendlyName());
@@ -849,6 +871,11 @@ namespace Shadowsocks.View {
         }
 
         void configForm_FormClosed(object sender, FormClosedEventArgs e) {
+            if (IsCopyLinksToClipboard)
+            {
+                IsCopyLinksToClipboard = false;
+                Clipboard.Clear();
+            }
             configForm = null;
             configfrom_open = false;
             Utils.ReleaseMemory(true);
@@ -940,10 +967,12 @@ namespace Shadowsocks.View {
                 timerDelayCheckUpdate.Stop();
                 timerDelayCheckUpdate = null;
             }
-            if (timerUpdateLatency != null) {
+            if (timerUpdateLatency != null)
+            {
                 timerUpdateLatency.Elapsed -= timerUpdateLatency_Elapsed;
                 timerUpdateLatency.Stop();
                 timerUpdateLatency = null;
+                _controller.SaveTimerUpdateLatency();
             }
             if (_notifyIcon != null)
                 _notifyIcon.Visible = false;
@@ -1008,6 +1037,7 @@ namespace Shadowsocks.View {
 
         private void EnableItem_Click(object sender, EventArgs e) {
             _controller.ToggleMode(ProxyMode.Direct);
+            DisconnectCurrent_Click(null, null);
         }
 
         private void GlobalModeItem_Click(object sender, EventArgs e) {

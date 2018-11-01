@@ -686,6 +686,7 @@ namespace Shadowsocks.View
             {
                 ((TextBox)sender).SelectAll();
                 Clipboard.SetDataObject(((TextBox)sender).Text);
+                MenuViewController.IsCopyLinksToClipboard = true;
             }
         }
 

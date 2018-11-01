@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using System.Windows.Forms;
 
+using Shadowsocks;
+
 namespace Shadowsocks.Controller
 {
     public class UpdateFreeNode
@@ -118,6 +120,10 @@ namespace Shadowsocks.Controller
                     _serverSubscribes.Add(config.serverSubscribes[index]);
                 }
                 Next();
+            }
+            else
+            {
+                Program._viewController.ShowTextByNotifyIconBalloon(I18N.GetString("Tips"), I18N.GetString("Updating server subscription."), ToolTipIcon.Info, 3);
             }
         }
 

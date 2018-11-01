@@ -18,7 +18,7 @@ namespace Shadowsocks.Controller
 
         public const string Name = "ShadowsocksR";
         public const string Copyright = "Copyright © BreakWa11 2017. Fork from Shadowsocks by clowwindy";
-        public const string Version = "5.1.5.1";
+        public const string Version = "5.1.5.2";
 #if !_CONSOLE
         public const string NetVer = "4.0";
 #else
