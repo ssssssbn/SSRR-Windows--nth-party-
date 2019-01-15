@@ -274,7 +274,7 @@ namespace Shadowsocks.View
         {
             int dpi_mul = Util.Utils.GetDpiMul();
             int width = 350 * dpi_mul / 4;
-            if (TextLink.Focused)
+            if (TextSSRLink.Focused || PictureQRcode.Visible)// 
             {
                 string qrText = ssconfig;
                 QRCode code = ZXing.QrCode.Internal.Encoder.encode(qrText, ErrorCorrectionLevel.M);
@@ -355,11 +355,11 @@ namespace Shadowsocks.View
 
                 if (checkSSRLink.Checked)
                 {
-                    TextLink.Text = server.GetSSRLinkForServer();
+                    TextSSRLink.Text = server.GetSSRLinkForServer();
                 }
                 else
                 {
-                    TextLink.Text = server.GetSSLinkForServer();
+                    TextSSRLink.Text = server.GetSSLinkForServer();
                 }
 
                 if (CheckTCPoverUDP.Checked || CheckUDPoverUDP.Checked || server.server_udp_port != 0)
@@ -371,8 +371,8 @@ namespace Shadowsocks.View
                 //IPLabel.Checked = false;
                 Update_SSR_controls_Visable();
                 UpdateObfsTextbox();
-                TextLink.SelectAll();
-                GenQR(TextLink.Text);
+                GenQR(TextSSRLink.Text);
+                //TextSSRLink.SelectAll();
             }
             else
             {
@@ -529,6 +529,9 @@ namespace Shadowsocks.View
 
         private void OKButton_Click(object sender, EventArgs e)
         {
+            controller.ConfigChanged -= controller_ConfigChanged;
+            this.FormClosed -= new System.Windows.Forms.FormClosedEventHandler(this.ConfigForm_FormClosed);
+
             if (SaveOldSelectedServer() == -1)
             {
                 return;
@@ -550,6 +553,7 @@ namespace Shadowsocks.View
                 }
             }
             controller.SaveServersConfig(_modifiedConfiguration);
+            callresumeUpdateLatency();
             this.Close();
         }
 
@@ -566,6 +570,16 @@ namespace Shadowsocks.View
         private void ConfigForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             controller.ConfigChanged -= controller_ConfigChanged;
+            callresumeUpdateLatency();
+        }
+
+        private void callresumeUpdateLatency()
+        {
+            if (Program._viewController.UpdateLatencyInterrupt)
+            {
+                Program._viewController.UpdateLatencyInterrupt = false;
+                Program._viewController.startUpdateLatency();
+            }
         }
 
         private void UpButton_Click(object sender, EventArgs e)
@@ -675,21 +689,22 @@ namespace Shadowsocks.View
             if (change == 1)
             {
                 LoadConfiguration(_modifiedConfiguration);
+                LoadSelectedServer();
             }
-            LoadSelectedServer();
-            ((TextBox)sender).SelectAll();
+            if(!PictureQRcode.Visible)
+                LoadSelectedServer();
         }
 
-        private void TextLinkTextBox_MouseUp(object sender, MouseEventArgs e)
+        private void TextSSRLink_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
                 ((TextBox)sender).SelectAll();
-                Clipboard.SetDataObject(((TextBox)sender).Text);
-                MenuViewController.IsCopyLinksToClipboard = true;
+                Clipboard.SetDataObject(TextSSRLink.Text);
+                Program._viewController.IsCopyLinksToClipboard = true;
             }
         }
-
+        
         private void LinkUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             System.Diagnostics.Process.Start(updateChecker.LatestVersionURL);

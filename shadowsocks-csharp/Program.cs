@@ -26,6 +26,7 @@ namespace Shadowsocks
         [STAThread]
         static void Main(string[] args)
         {
+            string TheProxyModeInLaunching;
             if (Utils.IsVirusExist())
             {
                 return;
@@ -97,6 +98,25 @@ namespace Shadowsocks
 
 #if !_CONSOLE
                 //Util.Utils.ReleaseMemory(true);
+
+                foreach (string arg in args)
+                {
+                    if (arg == "-Direct")
+                    {
+                        _viewController.DirectItem_Click();
+                        break;
+                    }
+                    else if(arg == "-Pac")
+                    {
+                        _viewController.PACModeItem_Click();
+                        break;
+                    }
+                    else if(arg == "-Global")
+                    {
+                        _viewController.GlobalModeItem_Click();
+                        break;
+                    }
+                }
 
                 Application.Run();
             }

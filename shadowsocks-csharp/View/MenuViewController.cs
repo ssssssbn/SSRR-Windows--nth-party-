@@ -75,12 +75,16 @@ namespace Shadowsocks.View {
         //private System.Timers.Timer timerDetectVirus;
         private System.Timers.Timer timerDelayCheckUpdate;
         private System.Timers.Timer timerUpdateLatency;
+        public bool UpdateLatencyInterrupt = false;
 
         private bool configfrom_open = false;
+        private bool subScribeForm_open = false;
         private List<EventParams> eventList = new List<EventParams>();
-
+        
         public static AppBarForm appbarform;
-        public static bool IsCopyLinksToClipboard = false;
+        public bool IsCopyLinksToClipboard = false;
+        public bool UpdateLatencyInProgress = false;
+        public bool UpdateFreeNodeInterrupt = false;
         //public static bool appbarformAtStart = false;
 
         public MenuViewController(ShadowsocksController controller)
@@ -118,13 +122,30 @@ namespace Shadowsocks.View {
 
             //this interval will change
             timerDelayCheckUpdate = new System.Timers.Timer(1000.0 * 10);
+            timerDelayCheckUpdate.AutoReset = false;
             timerDelayCheckUpdate.Elapsed += timerDelayCheckUpdate_Elapsed;
             timerDelayCheckUpdate.Start();
 
-            timerUpdateLatency = new System.Timers.Timer(1000.0 * 1);
+
+            timerUpdateLatency = new System.Timers.Timer(1000.0 * 3);
+            timerUpdateLatency.AutoReset = false;
             timerUpdateLatency.Elapsed += timerUpdateLatency_Elapsed;
-            if(!_controller.GetCurrentConfiguration().nodeFeedAutoUpdate)
+            if(!_controller.GetCurrentConfiguration().nodeFeedAutoUpdate && _controller.GetCurrentConfiguration().nodeFeedAutoLatency)
+            {
                 timerUpdateLatency.Start();
+            }
+        }
+
+        public void startCheckFreeNode()
+        {
+                timerDelayCheckUpdate.Interval = 1000.0;
+                timerDelayCheckUpdate.Start();
+        }
+
+        public void startUpdateLatency()
+        {
+            timerUpdateLatency.Interval = 1000.0;
+            timerUpdateLatency.Start();
         }
 
         public void ShownotifyIcontext()
@@ -146,35 +167,89 @@ namespace Shadowsocks.View {
                     timerDelayCheckUpdate.Interval = 1000.0 * 60 * 60 * 2;
                 }
             }
-            updateChecker.CheckUpdate(_controller.GetCurrentConfiguration());
+            //updateChecker.CheckUpdate(_controller.GetCurrentConfiguration());
+
+            if (subScribeForm_open)
+            {
+                UpdateFreeNodeInterrupt = true;
+                return;
+            }
 
             Configuration cfg = _controller.GetCurrentConfiguration();
-            if (cfg.isDefaultConfig() || cfg.nodeFeedAutoUpdate) {
-                updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, !cfg.isDefaultConfig(), false);
+            if (cfg.nodeFeedAutoUpdate) //cfg.isDefaultConfig() ||
+            {
+                    updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, cfg.nodeFeedAutoUpdateUseProxy && !cfg.isDefaultConfig(), false);//!cfg.isDefaultConfig()
             }
+            timerDelayCheckUpdate.Start();
         }
 
         private void timerUpdateLatency_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            timerUpdateLatency.Stop();
-            timerUpdateLatency.Interval = 1000.0 * 60 * 31;
+            if (subScribeForm_open)
+            {
+                UpdateLatencyInterrupt = true;
+                return;
+            }
+            if (UpdateLatencyInProgress)
+            {
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("Latency test in progress."), ToolTipIcon.Info, 1);
+                return;
+            }
+            else if (UpdateLatencyInterrupt)
+            {
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("Updating server subscriptions, update latency process after completion."), ToolTipIcon.Info, 1);
+                return;
+            }
+            UpdateLatencyInProgress = true;
+
+            Configuration configuration = _controller.GetCurrentConfiguration();
             try
             {
-                Configuration configuration = _controller.GetCurrentConfiguration();
                 for (int i = 0; i < configuration.configs.Count; i++)
                 {
+                    if (updateSubscribeManager.IsInProgress())
+                    {
+                        UpdateLatencyInProgress = false;
+                        if (i > 0)
+                            Utils.ReleaseMemory(true);
+                        return;
+                    }
+                    if(UpdateLatencyInterrupt || subScribeForm_open || configfrom_open)
+                    {
+                        UpdateLatencyInterrupt = true;
+                        UpdateLatencyInProgress = false;
+                        if (i > 0)
+                            Utils.ReleaseMemory(true);
+                        return;
+                    }
+                    //if (UpdateLatencyInterrupt)
+                    //{
+                    //    if (i > 0)
+                    //        Utils.ReleaseMemory(true);
+                    //    UpdateLatencyInProgress = false;
+                    //    return;
+                    //}
+                    if (!configuration.configs[i].enable)
+                    {
+                        configuration.configs[i].latency = -1;
+                        continue;
+                    }
                     configuration.configs[i].tcpingLatency();
-                    Utils.ReleaseMemory(true);
                 }
-
+                Utils.ReleaseMemory(true);
             }
             catch
             {
-                timerUpdateLatency.Interval = 1000.0 * 60;
+                timerUpdateLatency.Interval = 1000.0 * 10;
             }
             //_controller.SaveTimerUpdateLatency();
             UpdateServersMenu();
-            timerUpdateLatency.Start();
+            if (configuration.nodeFeedAutoLatency)
+            {
+                timerUpdateLatency.Interval = 1000.0 * 60 * 30;
+                timerUpdateLatency.Start();
+            }
+            UpdateLatencyInProgress = false;
         }
 
         void controller_Errored(object sender, System.IO.ErrorEventArgs e) {
@@ -285,7 +360,7 @@ namespace Shadowsocks.View {
         private void LoadMenu() {
             contextMenu1 = new ContextMenu(new MenuItem[] {
                 modeItem = CreateMenuGroup("Mode", new MenuItem[] {
-                    enableItem = CreateMenuItem("Disable system proxy", new EventHandler(EnableItem_Click)),
+                    enableItem = CreateMenuItem("Disable system proxy", new EventHandler(DirectItem_Click)),
                     PACModeItem = CreateMenuItem("PAC", new EventHandler(PACModeItem_Click)),
                     globalModeItem = CreateMenuItem("Global", new EventHandler(GlobalModeItem_Click)),
                     new MenuItem("-"),
@@ -335,6 +410,7 @@ namespace Shadowsocks.View {
                 CreateMenuItem("Global settings...", new EventHandler(Setting_Click)),
                 CreateMenuItem("Port settings...", new EventHandler(ShowPortMapItem_Click)),
                 new MenuItem("-"),
+                CreateMenuItem("Update latency", new EventHandler(UpdateLatency_Click)),
                 hotKeyItem = CreateMenuItem("Edit Hotkeys...", new EventHandler(hotKeyItem_Click)),
                 CreateMenuItem("Reset password...", new EventHandler(ResetPasswordItem_Click)),
                 CreateMenuItem("Gen custom QRCode...", new EventHandler(showURLFromQRCode)),
@@ -410,8 +486,24 @@ namespace Shadowsocks.View {
         }
 
         void updateFreeNodeChecker_NewFreeNodeFound(object sender, EventArgs e) {
-            if (configfrom_open) {
+            if (configfrom_open)
+            {
+                eventList.Clear();
                 eventList.Add(new EventParams(sender, e));
+                return;
+            }
+            if (subScribeForm_open)
+            {
+                timerDelayCheckUpdate.Stop();
+                updateSubscribeManager.ClearTask();
+                UpdateFreeNodeInterrupt = true;
+                return;
+            }
+            if (UpdateFreeNodeInterrupt)
+            {
+                updateSubscribeManager.ClearTask();
+                updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, !updateSubscribeManager._use_proxy, true);
+                UpdateFreeNodeInterrupt = false;
                 return;
             }
             string lastGroup = null;
@@ -596,19 +688,28 @@ namespace Shadowsocks.View {
                     _controller.SaveServersConfig(config, false);
                 }
             }
-
-            if (count > 0) {
+            
+            if (count > 0)
+            {
+                updateFreeNodeChecker.countnum += 1;
                 if (updateFreeNodeChecker.noitify)
                     ShowBalloonTip(I18N.GetString("Success"),
                         string.Format(I18N.GetString("Update subscribe {0} success"), lastGroup), ToolTipIcon.Info, 10000);
             }
-            else {
-                if (lastGroup == null) {
-                    lastGroup = updateFreeNodeChecker.subscribeTask.Group;
-                    //lastGroup = updateSubscribeManager.LastGroup;
+            else
+            {
+                if (!updateFreeNodeChecker.trieduseproxy)
+                {
+                    updateFreeNodeChecker.countnum += 1;
+                    updateFreeNodeChecker.countfailurenum += 1;
+                    updateFreeNodeChecker.recordfailure();
+                    if (lastGroup == null)
+                    {
+                        lastGroup = updateFreeNodeChecker.subscribeTask.Group;
+                        //lastGroup = updateSubscribeManager.LastGroup;
+                    }
+                    ShowBalloonTip(I18N.GetString("Error"), String.Format(I18N.GetString("Update subscribe {0} failure"), lastGroup), ToolTipIcon.Info, 1);
                 }
-                ShowBalloonTip(I18N.GetString("Error"),
-                    String.Format(I18N.GetString("Update subscribe {0} failure"), lastGroup), ToolTipIcon.Info, 10000);
             }
 
             if (updateSubscribeManager.Next())
@@ -617,9 +718,24 @@ namespace Shadowsocks.View {
             else
             {
                 _controller.JustReload();
-                timerUpdateLatency.Stop();
-                timerUpdateLatency.Interval = 1000.0 * 1;
-                timerUpdateLatency.Start();
+                UpdateLatencyInterrupt = false;
+                if (_controller.GetCurrentConfiguration().nodeFeedAutoLatency)
+                {
+                    timerUpdateLatency.Interval = 1000.0;
+                    timerUpdateLatency.Start();
+                }
+                if (updateFreeNodeChecker.countfailure != "")
+                {
+                    if (updateFreeNodeChecker.countnum == updateFreeNodeChecker.countfailurenum)
+                        updateFreeNodeChecker.countfailure = I18N.GetString("All");
+                    ShowBalloonTip(I18N.GetString("Error"), String.Format(I18N.GetString("Update subscribe {0} failure"), updateFreeNodeChecker.countfailure), ToolTipIcon.Info, 1);
+                }
+                else
+                {
+                    if (updateFreeNodeChecker.noitify)
+                        ShowBalloonTip(I18N.GetString("Success"), I18N.GetString("Update all subscribe ssuccess"), ToolTipIcon.Info, 1);
+                }
+                updateSubscribeManager.ClearTask();
             }
 
         }
@@ -854,6 +970,7 @@ namespace Shadowsocks.View {
         }
 
         private void ShowSubscribeSettingForm() {
+            subScribeForm_open = true;
             if (subScribeForm != null) {
                 subScribeForm.Activate();
                 subScribeForm.Update();
@@ -909,9 +1026,10 @@ namespace Shadowsocks.View {
 
         void subScribeForm_FormClosed(object sender, FormClosedEventArgs e) {
             subScribeForm = null;
-            timerUpdateLatency = new System.Timers.Timer(1000.0 * 3);
-            timerUpdateLatency.Elapsed += timerUpdateLatency_Elapsed;
-            timerUpdateLatency.Start();
+            subScribeForm_open = false;
+            //timerUpdateLatency = new System.Timers.Timer(1000.0 * 3);
+            //timerUpdateLatency.Elapsed += timerUpdateLatency_Elapsed;
+            //timerUpdateLatency.Start();
         }
 
         private void Config_Click(object sender, EventArgs e) {
@@ -957,6 +1075,7 @@ namespace Shadowsocks.View {
             if (configForm != null) {
                 configForm.Close();
                 configForm = null;
+                configfrom_open = false;
             }
             if (serverLogForm != null) {
                 serverLogForm.Close();
@@ -1035,17 +1154,18 @@ namespace Shadowsocks.View {
             _controller.ToggleMode(ProxyMode.NoModify);
         }
 
-        private void EnableItem_Click(object sender, EventArgs e) {
+        private void DirectItem_Click(object sender, EventArgs e) {
             _controller.ToggleMode(ProxyMode.Direct);
             DisconnectCurrent_Click(null, null);
         }
 
-        private void GlobalModeItem_Click(object sender, EventArgs e) {
-            _controller.ToggleMode(ProxyMode.Global);
+        private void PACModeItem_Click(object sender, EventArgs e)
+        {
+            _controller.ToggleMode(ProxyMode.Pac);
         }
 
-        private void PACModeItem_Click(object sender, EventArgs e) {
-            _controller.ToggleMode(ProxyMode.Pac);
+        private void GlobalModeItem_Click(object sender, EventArgs e) {
+            _controller.ToggleMode(ProxyMode.Global);
         }
 
         private void RuleBypassLanItem_Click(object sender, EventArgs e) {
@@ -1134,12 +1254,51 @@ namespace Shadowsocks.View {
             updateChecker.CheckUpdate(_controller.GetCurrentConfiguration());
         }
 
-        private void CheckNodeUpdateUseProxy_Click(object sender, EventArgs e) {
-            updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, true, true);
+        private void CheckNodeUpdate_Click(object sender, EventArgs e)
+        {
+            CheckNodeUpdate(false);
+            //timerUpdateLatency.Stop();
+            //UpdateLatencyInterrupt = true;
+            //if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == true)
+            //    UpdateFreeNodeInterrupt = true;
+            //else
+            //    updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, false, true);
         }
 
-        private void CheckNodeUpdate_Click(object sender, EventArgs e) {
-            updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, false, true);
+        private void CheckNodeUpdateUseProxy_Click(object sender, EventArgs e)
+        {
+            CheckNodeUpdate(true);
+            //timerUpdateLatency.Stop();
+            //UpdateLatencyInterrupt = true;
+            //if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == false)
+            //    UpdateFreeNodeInterrupt = true;
+            //else
+            //    updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, true, true);
+        }
+
+        private void CheckNodeUpdate(bool proxy)
+        {
+            if(subScribeForm_open)
+            {
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("Close the server subscription settings window before updating."), ToolTipIcon.Info, 1);
+                return;
+            }
+            timerUpdateLatency.Stop();
+            UpdateLatencyInterrupt = true;
+            if (!proxy)
+            {
+                if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == true)
+                    UpdateFreeNodeInterrupt = true;
+                else
+                    updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, false, true);
+            }
+            else
+            {
+                if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == false)
+                    UpdateFreeNodeInterrupt = true;
+                else
+                    updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, true, true);
+            }
         }
 
         private void ShowLogItem_Click(object sender, EventArgs e) {
@@ -1202,8 +1361,9 @@ namespace Shadowsocks.View {
                     URL_Split((string)iData.GetData(DataFormats.Text), ref urls);
                     int count = 0;
                     foreach (string url in urls) {
-                        if (_controller.AddServerBySSURL(url))
-                            ++count;
+                        if (!_controller.IsServerExisting(url))
+                            if (_controller.AddServerBySSURL(url))
+                                ++count;
                     }
                     if (count > 0)
                     {
@@ -1213,11 +1373,11 @@ namespace Shadowsocks.View {
                     }
                 }
             }
-            catch {
-
+            catch
+            {
             }
             if (IsShowBalloonTip)
-                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No SS(R) links in clipboard."), ToolTipIcon.Error, 3);
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No new SS(R) links in clipboard."), ToolTipIcon.Error, 3);
             return false;
         }
 
@@ -1366,32 +1526,44 @@ namespace Shadowsocks.View {
                         string url;
                         Rectangle rect;
                         if (stretch == 1 ? ScanQRCode(screen, fullImage, cropRect, out url, out rect) : ScanQRCodeStretch(screen, fullImage, cropRect, stretch, out url, out rect)) {
-                            var success = _controller.AddServerBySSURL(url);
-                            QRCodeSplashForm splash = new QRCodeSplashForm();
-                            if (success) {
-                                splash.FormClosed += splash_FormClosed;
+                            if (!_controller.IsServerExisting(url))
+                            {
+                                var success = _controller.AddServerBySSURL(url);
+                                QRCodeSplashForm splash = new QRCodeSplashForm();
+                                if (success)
+                                {
+                                    splash.FormClosed += splash_FormClosed;
+                                }
+                                else if (!ss_only)
+                                {
+                                    _urlToOpen = url;
+                                    //if (url.StartsWith("http://") || url.StartsWith("https://"))
+                                    //    splash.FormClosed += openURLFromQRCode;
+                                    //else
+                                    splash.FormClosed += showURLFromQRCode;
+                                }
+                                else
+                                {
+                                    decode_fail = true;
+                                    continue;
+                                }
+                                splash.Location = new Point(screen.Bounds.X, screen.Bounds.Y);
+                                double dpi = Screen.PrimaryScreen.Bounds.Width / (double)screen_size.X;
+                                splash.TargetRect = new Rectangle(
+                                    (int)(rect.Left * dpi + screen.Bounds.X),
+                                    (int)(rect.Top * dpi + screen.Bounds.Y),
+                                    (int)(rect.Width * dpi),
+                                    (int)(rect.Height * dpi));
+                                splash.Size = new Size(fullImage.Width, fullImage.Height);
+                                splash.Show();
+                                return true;
                             }
-                            else if (!ss_only) {
-                                _urlToOpen = url;
-                                //if (url.StartsWith("http://") || url.StartsWith("https://"))
-                                //    splash.FormClosed += openURLFromQRCode;
-                                //else
-                                splash.FormClosed += showURLFromQRCode;
+                            else
+                            {
+                                if (IsShowBalloonTip)
+                                    ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No new QRCode on screen."), ToolTipIcon.Info, 1);
+                                return false;
                             }
-                            else {
-                                decode_fail = true;
-                                continue;
-                            }
-                            splash.Location = new Point(screen.Bounds.X, screen.Bounds.Y);
-                            double dpi = Screen.PrimaryScreen.Bounds.Width / (double)screen_size.X;
-                            splash.TargetRect = new Rectangle(
-                                (int)(rect.Left * dpi + screen.Bounds.X),
-                                (int)(rect.Top * dpi + screen.Bounds.Y),
-                                (int)(rect.Width * dpi),
-                                (int)(rect.Height * dpi));
-                            splash.Size = new Size(fullImage.Width, fullImage.Height);
-                            splash.Show();
-                            return true;
                         }
                     }
                     if (decode_fail) {
@@ -1399,7 +1571,7 @@ namespace Shadowsocks.View {
                     }
                 }
             }
-            if(IsShowBalloonTip)
+            if (IsShowBalloonTip) 
                 ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No QRCode found. Try to zoom in or move it to the center of the screen."), ToolTipIcon.Error,3);
             //MessageBox.Show(I18N.GetString("No QRCode found. Try to zoom in or move it to the center of the screen."));
             return false;
@@ -1451,6 +1623,13 @@ namespace Shadowsocks.View {
             Utils.ReleaseMemory(true);
         }
 
+        private void UpdateLatency_Click(object sender, EventArgs e)
+        {
+            timerUpdateLatency.Stop();
+            timerUpdateLatency.Interval = 1000.0;
+            timerUpdateLatency.Start();
+        }
+
         private void hotKeyItem_Click(object sender, EventArgs e)
         {
             ShowHotKeySettingsForm();
@@ -1479,7 +1658,22 @@ namespace Shadowsocks.View {
         public void CallClipboardAndQRCodeScanning_HotKey()
         {
             if(!ScanClipboardAddress(false) && !ScanScreenQRCode(false, false))
-                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No SS(R) links in clipboard or QRCode on screen."), ToolTipIcon.Info, 3);
+                ShowBalloonTip(I18N.GetString("Tips"), I18N.GetString("No new SS(R) links in clipboard or new QRCode on screen."), ToolTipIcon.Info, 3);
+        }
+        
+        public void DirectItem_Click()
+        {
+            DirectItem_Click(null, null);
+        }
+
+        public void PACModeItem_Click()
+        {
+            PACModeItem_Click(null, null);
+        }
+
+        public void GlobalModeItem_Click()
+        {
+            GlobalModeItem_Click(null, null);
         }
     }
 }

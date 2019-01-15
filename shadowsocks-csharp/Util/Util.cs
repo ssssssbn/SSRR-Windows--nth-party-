@@ -332,7 +332,10 @@ namespace Shadowsocks.Util
         {
             IPAddress ret_ipAddress = null;
             ret_ipAddress = _QueryDns(host, dns_servers, IPv6_first);
-            Logging.Info($"DNS query {host} answer {ret_ipAddress.ToString()}");
+            if(ret_ipAddress!=null)
+                Logging.Info($"DNS query {host} answer {ret_ipAddress.ToString()}");
+            else
+                Logging.Info($"DNS query {host} answer NULL");
             return ret_ipAddress;
         }
 

@@ -23,6 +23,7 @@ namespace Shadowsocks.View
         [DllImport("user32.dll")]
         public static extern bool IsIconic(IntPtr hWnd);
 
+
         private APoint TopLeftPoint = new APoint();
 
         class DoubleBufferListView : DataGridView
@@ -302,6 +303,7 @@ namespace Shadowsocks.View
                 workerEvent.Set();
             }
         }
+
         public void RefreshLog()
         {
             if (ServerSpeedLogList == null)

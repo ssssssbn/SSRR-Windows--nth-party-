@@ -56,12 +56,14 @@ Donate...=捐助...
 Quit=退出
 Edit Servers=編輯伺服器
 Global Settings=選項設置
+Update latency=更新延遲
 Edit Hotkeys...=編輯快速鍵...
 Tips=提示
-No SS(R) links in clipboard.=我認不出剪貼板的SS(R)鏈接...
-No SS(R) links in clipboard or QRCode on screen.=我認不出剪貼板的SS(R)鏈接或熒幕二維碼...
+No new SS(R) links in clipboard.=我認不出剪貼板的"新"SS(R)鏈接...
+No new QRCode on screen.=我認不出熒幕上的"新"二維碼...
+No new SS(R) links in clipboard or new QRCode on screen.=我認不出剪貼板的"新"SS(R)鏈接或"新"熒幕二維碼...
 Current status=當前狀態
-No Remarks=無備註節點
+No Remarks=（無備註節點）
 
 # Config Form
 
@@ -208,7 +210,11 @@ URL=網址
 Group name=組名
 Last Update=最近更新
 Auto update=自動更新
-Updating server subscription.=正在更新服務器訂閱...
+Auto latency=自動延遲
+Global use proxy=全部通過代理
+Use proxy=強制代理
+Try use proxy=嘗試代理
+Updating server subscription.=正在更新伺服器訂閱...
 
 # Messages
 
@@ -241,12 +247,17 @@ Running: Port {0}=正在運行：連接埠 {0}
 Password NOT match=密碼不匹配
 Update subscribe {0} success=伺服器訂閱 {0} 更新成功
 Update subscribe {0} failure=伺服器訂閱 {0} 更新失敗
+Update all subscribe ssuccess=成功更新所有伺服器訂閱
 Success=成功
 Register hotkey failed=註冊快速鍵失敗
 Cannot parse hotkey: {0}=剖析快速鍵失敗: {0}
 Share Over LAN=區域網路共用
 On=開啟
 Off=關閉
+Latency test in progress.=延遲測試進行中。
+Updating server subscriptions, update latency process after completion.=正在更新伺服器訂閱，完成后將會進行延遲測試。
+All=全部
+Close the server subscription settings window before updating.=更新前需關閉伺服器訂閱設置窗口。
 
 # HotkeySettings Form
 

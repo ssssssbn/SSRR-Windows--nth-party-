@@ -16,7 +16,9 @@ namespace Shadowsocks.View
         private ShadowsocksController controller;
         // this is a copy of configuration that we are working on
         private Configuration _modifiedConfiguration;
-        private int _old_select_index;
+        private int _oldselect_index;
+
+        delegate void DelegantTask();
 
         public SubscribeForm(ShadowsocksController controller)
         {
@@ -34,22 +36,38 @@ namespace Shadowsocks.View
 
         private void UpdateTexts()
         {
-            this.Text = I18N.GetString("Subscribe Settings");
-            label1.Text = I18N.GetString("URL");
-            label2.Text = I18N.GetString("Group name");
-            checkBoxAutoUpdate.Text = I18N.GetString("Auto update");
-            buttonOK.Text = I18N.GetString("OK");
-            buttonCancel.Text = I18N.GetString("Cancel");
-            label3.Text = I18N.GetString("Last Update");
+            this.Text = I18N.GetString(this.Text);
+            labelURL.Text = I18N.GetString(labelURL.Text);
+            labelGroupName.Text = I18N.GetString(labelGroupName.Text);
+            checkBoxAutoUpdate.Text = I18N.GetString(checkBoxAutoUpdate.Text);
+            checkBoxAutoLatency.Text = I18N.GetString(checkBoxAutoLatency.Text);
+            checkBoxAutoUpdateUseProxy.Text = I18N.GetString(checkBoxAutoUpdateUseProxy.Text);
+            checkBoxAutoUpdateTryUseProxy.Text = I18N.GetString(checkBoxAutoUpdateTryUseProxy.Text);
+            buttonOK.Text = I18N.GetString(buttonOK.Text);
+            buttonCancel.Text = I18N.GetString(buttonCancel.Text);
+            labelLastUpdate.Text = I18N.GetString(labelLastUpdate.Text);
+            labelUseProxy.Text = I18N.GetString(labelUseProxy.Text);
         }
 
         private void SubscribeForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             controller.ConfigChanged -= controller_ConfigChanged;
+            if (Program._viewController.UpdateFreeNodeInterrupt)
+            {
+                Program._viewController.UpdateFreeNodeInterrupt = false;
+                Program._viewController.startCheckFreeNode();
+            }
+            else if (Program._viewController.UpdateLatencyInterrupt)
+            {
+                Program._viewController.UpdateLatencyInterrupt = false;
+                Program._viewController.startUpdateLatency();
+            }
         }
 
         private void controller_ConfigChanged(object sender, EventArgs e)
         {
+            //if (this.InvokeRequired)
+            //    return;
             LoadCurrentConfiguration();
         }
 
@@ -71,6 +89,9 @@ namespace Shadowsocks.View
         {
             int select_index = 0;
             checkBoxAutoUpdate.Checked = _modifiedConfiguration.nodeFeedAutoUpdate;
+            checkBoxAutoLatency.Checked = _modifiedConfiguration.nodeFeedAutoLatency;
+            checkBoxAutoUpdateUseProxy.Checked = _modifiedConfiguration.nodeFeedAutoUpdateUseProxy;
+            checkBoxAutoUpdateTryUseProxy.Checked = _modifiedConfiguration.nodeFeedAutoUpdateTryUseProxy;
             UpdateList();
             UpdateSelected(select_index);
             SetSelectIndex(select_index);
@@ -79,16 +100,32 @@ namespace Shadowsocks.View
         private int SaveAllSettings()
         {
             _modifiedConfiguration.nodeFeedAutoUpdate = checkBoxAutoUpdate.Checked;
+            _modifiedConfiguration.nodeFeedAutoLatency = checkBoxAutoLatency.Checked;
+            _modifiedConfiguration.nodeFeedAutoUpdateUseProxy = checkBoxAutoUpdateUseProxy.Checked;
+            _modifiedConfiguration.nodeFeedAutoUpdateTryUseProxy = checkBoxAutoUpdateTryUseProxy.Checked;
             return 0;
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)
         {
+            //if (Program._viewController.UpdateFreeNodeInterrupt)
+            //{
+            //    Program._viewController.UpdateFreeNodeInterrupt = false;
+            //    Program._viewController.subScribeFormCheckFreeNode();
+            //}
+            //else if (Program._viewController.UpdateLatencyInterrupt)
+            //{
+            //    Program._viewController.UpdateLatencyInterrupt = false;
+            //    Program._viewController.subScribeFormUpdateLatency();
+            //}
             this.Close();
         }
 
         private void buttonOK_Click(object sender, EventArgs e)
         {
+            controller.ConfigChanged -= controller_ConfigChanged;
+            this.FormClosed -= new System.Windows.Forms.FormClosedEventHandler(this.SubscribeForm_FormClosed);
+
             int select_index = listServerSubscribe.SelectedIndex;
             SaveSelected(select_index);
             if (SaveAllSettings() == -1)
@@ -96,6 +133,17 @@ namespace Shadowsocks.View
                 return;
             }
             controller.SaveServersConfig(_modifiedConfiguration);
+            
+            if (Program._viewController.UpdateFreeNodeInterrupt || checkBoxAutoUpdate.Checked)
+            {
+                Program._viewController.UpdateFreeNodeInterrupt = false;
+                Program._viewController.startCheckFreeNode();
+            }
+            else if (Program._viewController.UpdateLatencyInterrupt || checkBoxAutoLatency.Checked)
+            {
+                Program._viewController.UpdateLatencyInterrupt = false;
+                Program._viewController.startUpdateLatency();
+            }
             this.Close();
         }
 
@@ -124,7 +172,7 @@ namespace Shadowsocks.View
                 ServerSubscribe ss = _modifiedConfiguration.serverSubscribes[index];
                 textBoxURL.Text = ss.URL;
                 textBoxGroup.Text = ss.Group;
-                _old_select_index = index;
+                _oldselect_index = index;
                 if (ss.LastUpdateTime != 0)
                 {
                     DateTime now = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -135,6 +183,7 @@ namespace Shadowsocks.View
                 {
                     textUpdate.Text = "(｢･ω･)｢";
                 }
+                checkBoxUseProxy.Checked = ss.UseProxy;
             }
         }
 
@@ -149,16 +198,17 @@ namespace Shadowsocks.View
                     ss.Group = "";
                     ss.LastUpdateTime = 0;
                 }
+                ss.UseProxy = checkBoxUseProxy.Checked;
             }
         }
 
         private void listServerSubscribe_SelectedIndexChanged(object sender, EventArgs e)
         {
             int select_index = listServerSubscribe.SelectedIndex;
-            if (_old_select_index == select_index)
+            if (_oldselect_index == select_index)
                 return;
 
-            SaveSelected(_old_select_index);
+            SaveSelected(_oldselect_index);
             UpdateList();
             UpdateSelected(select_index);
             SetSelectIndex(select_index);
@@ -166,9 +216,9 @@ namespace Shadowsocks.View
 
         private void buttonAdd_Click(object sender, EventArgs e)
         {
-            SaveSelected(_old_select_index);
+            SaveSelected(_oldselect_index);
             int select_index = _modifiedConfiguration.serverSubscribes.Count;
-            if (_old_select_index >= 0 && _old_select_index < _modifiedConfiguration.serverSubscribes.Count)
+            if (_oldselect_index >= 0 && _oldselect_index < _modifiedConfiguration.serverSubscribes.Count)
             {
                 _modifiedConfiguration.serverSubscribes.Insert(select_index, new ServerSubscribe());
             }
@@ -201,6 +251,18 @@ namespace Shadowsocks.View
             {
                 textBoxURL.Enabled = false;
             }
+        }
+
+        private void checkBoxAutoUpdateUseProxy_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxAutoUpdateUseProxy.Checked && checkBoxAutoUpdateTryUseProxy.Checked)
+                checkBoxAutoUpdateTryUseProxy.Checked = false;
+        }
+
+        private void checkBoxAutoUpdateTryUseProxy_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxAutoUpdateTryUseProxy.Checked && checkBoxAutoUpdateUseProxy.Checked)
+                checkBoxAutoUpdateUseProxy.Checked = false;
         }
     }
 }

@@ -221,11 +221,23 @@ namespace Shadowsocks.Controller
             _config.FlushPortMapCache();
         }
 
-        private bool IsServerExisting(Server server)
+        public bool IsServerExisting(string ssURL)
         {
-            for (int i = 0; i < _config.configs.Count; i++) 
-                if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port)
+            if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase) || ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var server = new Server(ssURL, null);
+                    for (int i = 0; i < _config.configs.Count; i++)
+                    if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port)
+                        return true;
+                }
+                catch (Exception e)
+                {
+                    Logging.LogUsefulException(e);
                     return true;
+                }
+            }
             return false;
         }
 
@@ -236,8 +248,8 @@ namespace Shadowsocks.Controller
                 try
                 {
                     var server = new Server(ssURL, force_group);
-                    if (IsServerExisting(server))
-                        return false;
+                    //if (IsServerExisting(server))
+                    //    return true;
                     if (toLast)
                     {
                         _config.configs.Add(server);

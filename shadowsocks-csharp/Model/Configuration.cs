@@ -73,6 +73,8 @@ namespace Shadowsocks.Model
         public string URL = DEFAULT_FEED_URL;
         public string Group;
         public UInt64 LastUpdateTime;
+
+        public bool UseProxy = false;
     }
 
     public class GlobalConfiguration
@@ -144,6 +146,9 @@ namespace Shadowsocks.Model
         public APoint ServerLogFormLocation;
 
         public bool nodeFeedAutoUpdate;
+        public bool nodeFeedAutoLatency;
+        public bool nodeFeedAutoUpdateUseProxy;
+        public bool nodeFeedAutoUpdateTryUseProxy;
         public List<ServerSubscribe> serverSubscribes;
 
         public Dictionary<string, string> token = new Dictionary<string, string>();
@@ -406,6 +411,9 @@ namespace Shadowsocks.Model
             ServerLogFormLocation = new APoint();
 
             nodeFeedAutoUpdate = true;
+            nodeFeedAutoLatency = false;
+            nodeFeedAutoUpdateUseProxy = false;
+            nodeFeedAutoUpdateTryUseProxy = false;
 
             serverSubscribes = new List<ServerSubscribe>()
             {
@@ -449,6 +457,9 @@ namespace Shadowsocks.Model
             keepVisitTime = config.keepVisitTime;
             isHideTips = config.isHideTips;
             nodeFeedAutoUpdate = config.nodeFeedAutoUpdate;
+            nodeFeedAutoLatency = config.nodeFeedAutoLatency;
+            nodeFeedAutoUpdateUseProxy = config.nodeFeedAutoUpdateUseProxy;
+            nodeFeedAutoUpdateTryUseProxy = config.nodeFeedAutoUpdateTryUseProxy;
             serverSubscribes = config.serverSubscribes;
         }
 

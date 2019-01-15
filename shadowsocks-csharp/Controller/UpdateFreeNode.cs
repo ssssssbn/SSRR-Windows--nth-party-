@@ -10,6 +10,7 @@ using System.Xml;
 using System.Windows.Forms;
 
 using Shadowsocks;
+using System.IO;
 
 namespace Shadowsocks.Controller
 {
@@ -24,13 +25,26 @@ namespace Shadowsocks.Controller
 
         public const string Name = "ShadowsocksR";
 
+        public bool trieduseproxy = false;
+        public int countnum = 0;
+        public int countfailurenum = 0;
+        public string countfailure = "";
+
+        private Configuration _config;
+        private WebClient http;
+        private bool httpDownloadDelegated = false;
+        private System.Timers.Timer timerDownloadStringAsyncTimeout;
+
         public void CheckUpdate(Configuration config, ServerSubscribe subscribeTask, bool use_proxy, bool noitify)
         {
+            if (_config == null)
+                _config = config;
             FreeNodeResult = null;
             this.noitify = noitify;
             try
             {
-                WebClient http = new WebClient();
+                if (http == null)
+                    http = new WebClient();
                 http.Headers.Add("User-Agent",
                     String.IsNullOrEmpty(config.proxyUserAgent) ?
                     "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36"
@@ -52,8 +66,22 @@ namespace Shadowsocks.Controller
                 //UseProxy = !UseProxy;
                 this.subscribeTask = subscribeTask;
                 string URL = subscribeTask.URL;
-                http.DownloadStringCompleted += http_DownloadStringCompleted;
+                if (!httpDownloadDelegated)
+                {
+                    httpDownloadDelegated = true;
+                    http.DownloadStringCompleted += http_DownloadStringCompleted;
+                }
+
+                if (timerDownloadStringAsyncTimeout == null)
+                {
+                    timerDownloadStringAsyncTimeout = new System.Timers.Timer(1000.0 * 5);
+                    timerDownloadStringAsyncTimeout.AutoReset = false;
+                    timerDownloadStringAsyncTimeout.Elapsed += timerDownloadStringAsyncTimeout_Elapsed;
+                }
+
+                timerDownloadStringAsyncTimeout.Start();
                 http.DownloadStringAsync(new Uri(URL != null ? URL : UpdateURL));
+               
             }
             catch (Exception e)
             {
@@ -63,29 +91,88 @@ namespace Shadowsocks.Controller
 
         private void http_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
+            //if(timerDownloadStringAsyncTimeout.Enabled)
+            timerDownloadStringAsyncTimeout.Stop();
+
             try
             {
                 string response = e.Result;
                 FreeNodeResult = response;
 
-                if (NewFreeNodeFound != null)
-                {
-                    NewFreeNodeFound(this, new EventArgs());
-                }
+                //UpdateSubscribeManager.countnum += 1;
+                if (trieduseproxy)
+                    trieduseproxy = false;
+                //http.Dispose();
+                //if (NewFreeNodeFound != null)
+                //{
+                //    NewFreeNodeFound(this, new EventArgs());
+                //}
             }
             catch (Exception ex)
             {
+                if(_config.nodeFeedAutoUpdateTryUseProxy && http.Proxy==null && !trieduseproxy)
+                {
+                    trieduseproxy = true;
+                    NewFreeNodeFound?.Invoke(this, new EventArgs());
+                    return;
+                }
+                trieduseproxy = false;
+                //countnum += 1;
+                //countfailurenum += 1;
+
                 if (e.Error != null)
                 {
                     Logging.Debug(e.Error.ToString());
                 }
                 Logging.Debug(ex.ToString());
-                if (NewFreeNodeFound != null)
-                {
-                    NewFreeNodeFound(this, new EventArgs());
-                }
-                return;
+
+                //recordfailure();
+
+                //http.Dispose();
+                //if (NewFreeNodeFound != null)
+                //{
+                //    NewFreeNodeFound(this, new EventArgs());
+                //}
+                //return;
             }
+           
+            NewFreeNodeFound?.Invoke(this, new EventArgs());
+        }
+
+        private void timerDownloadStringAsyncTimeout_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            http.CancelAsync();
+        }
+
+        public void recordfailure()
+        {
+            if (countfailure == "")
+                countfailure = countfailure + countnum.ToString();
+            else
+                countfailure = countfailure + "," + countnum.ToString();
+        }
+
+        public void Disposesomething()
+        {
+            if (http != null)
+            {
+                http.Dispose();
+                http = null;
+                httpDownloadDelegated = false;
+            }
+            if (timerDownloadStringAsyncTimeout != null)
+            {
+                timerDownloadStringAsyncTimeout.Elapsed -= timerDownloadStringAsyncTimeout_Elapsed;
+                timerDownloadStringAsyncTimeout = null;
+            }
+            if (_config != null)
+            {
+                _config = null;
+            }
+            countnum = 0;
+            countfailurenum = 0;
+            countfailure = "";
+            trieduseproxy = false;
         }
     }
 
@@ -95,8 +182,9 @@ namespace Shadowsocks.Controller
         private List<ServerSubscribe> _serverSubscribes;
         private UpdateFreeNode _updater;
         private string _URL;
-        private bool _use_proxy;
+        public bool _use_proxy;
         public bool _noitify;
+
 
         public void CreateTask(Configuration config, UpdateFreeNode updater, int index, bool use_proxy, bool noitify)
         {
@@ -129,6 +217,8 @@ namespace Shadowsocks.Controller
 
         public bool Next()
         {
+            if(_updater.countnum!=0 && !_updater.trieduseproxy)
+                _serverSubscribes.RemoveAt(0);
             if (_serverSubscribes.Count == 0)
             {
                 _config = null;
@@ -137,8 +227,11 @@ namespace Shadowsocks.Controller
             else
             {
                 _URL = _serverSubscribes[0].URL;
-                _updater.CheckUpdate(_config, _serverSubscribes[0], _use_proxy, _noitify);
-                _serverSubscribes.RemoveAt(0);
+                if ((!_use_proxy && _serverSubscribes[0].UseProxy) || _updater.trieduseproxy) 
+                    _updater.CheckUpdate(_config, _serverSubscribes[0], true, _noitify);
+                else
+                    _updater.CheckUpdate(_config, _serverSubscribes[0], _use_proxy, _noitify);
+                //_serverSubscribes.RemoveAt(0);
                 return true;
             }
         }
@@ -150,5 +243,32 @@ namespace Shadowsocks.Controller
                 return _URL;
             }
         }
+
+        public bool IsInProgress()
+        {
+            if (_config != null)
+                return true;
+            else
+                return false;
+        }
+
+        public void ClearTask()
+        {
+            _serverSubscribes.Clear();
+            _config = null;
+            _updater.Disposesomething();
+        }
     }
+
+    //public class WebClientEx : WebClient
+    //{
+    //    public int Timeout { get; set; }
+
+    //    protected override WebRequest GetWebRequest(Uri address)
+    //    {
+    //        var request = base.GetWebRequest(address);
+    //        request.Timeout = Timeout;
+    //        return request;
+    //    }
+    //}
 }
