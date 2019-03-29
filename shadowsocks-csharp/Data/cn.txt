@@ -227,6 +227,8 @@ Global use proxy=全部通过代理
 Use proxy=强制代理
 Try use proxy=尝试代理
 Updating server subscription.=正在更新服务器订阅...
+Add=添加
+Delete=删除
 
 # Messages
 

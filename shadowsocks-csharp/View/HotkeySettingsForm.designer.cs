@@ -62,7 +62,7 @@
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.btnCancel.Size = new System.Drawing.Size(123, 31);
-            this.btnCancel.TabIndex = 0;
+            this.btnCancel.TabIndex = 2;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.CancelButton_Click);
@@ -90,7 +90,7 @@
             this.btnRegisterAll.Name = "btnRegisterAll";
             this.btnRegisterAll.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.btnRegisterAll.Size = new System.Drawing.Size(123, 31);
-            this.btnRegisterAll.TabIndex = 2;
+            this.btnRegisterAll.TabIndex = 0;
             this.btnRegisterAll.Text = "Reg All";
             this.btnRegisterAll.UseVisualStyleBackColor = true;
             this.btnRegisterAll.Visible = false;
@@ -139,7 +139,7 @@
             this.RegHotkeysAtStartupLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.RegHotkeysAtStartupLabel.Name = "RegHotkeysAtStartupLabel";
             this.RegHotkeysAtStartupLabel.Size = new System.Drawing.Size(165, 20);
-            this.RegHotkeysAtStartupLabel.TabIndex = 16;
+            this.RegHotkeysAtStartupLabel.TabIndex = 12;
             this.RegHotkeysAtStartupLabel.Text = "Reg Hotkeys At Startup";
             this.RegHotkeysAtStartupLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -163,7 +163,7 @@
             this.SwitchLoadBalanceLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.SwitchLoadBalanceLabel.Name = "SwitchLoadBalanceLabel";
             this.SwitchLoadBalanceLabel.Size = new System.Drawing.Size(147, 20);
-            this.SwitchLoadBalanceLabel.TabIndex = 1;
+            this.SwitchLoadBalanceLabel.TabIndex = 2;
             this.SwitchLoadBalanceLabel.Text = "Switch Load Balance";
             this.SwitchLoadBalanceLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -175,7 +175,7 @@
             this.SwitchAllowLanLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.SwitchAllowLanLabel.Name = "SwitchAllowLanLabel";
             this.SwitchAllowLanLabel.Size = new System.Drawing.Size(162, 20);
-            this.SwitchAllowLanLabel.TabIndex = 3;
+            this.SwitchAllowLanLabel.TabIndex = 4;
             this.SwitchAllowLanLabel.Text = "Switch Share Over LAN";
             this.SwitchAllowLanLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -187,7 +187,7 @@
             this.CallClipboardAndQRCodeScanningLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.CallClipboardAndQRCodeScanningLabel.Name = "CallClipboardAndQRCodeScanningLabel";
             this.CallClipboardAndQRCodeScanningLabel.Size = new System.Drawing.Size(262, 20);
-            this.CallClipboardAndQRCodeScanningLabel.TabIndex = 4;
+            this.CallClipboardAndQRCodeScanningLabel.TabIndex = 6;
             this.CallClipboardAndQRCodeScanningLabel.Text = "Call Clipboard And QRCode Scanning";
             this.CallClipboardAndQRCodeScanningLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -199,7 +199,7 @@
             this.ServerMoveUpLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.ServerMoveUpLabel.Name = "ServerMoveUpLabel";
             this.ServerMoveUpLabel.Size = new System.Drawing.Size(152, 20);
-            this.ServerMoveUpLabel.TabIndex = 4;
+            this.ServerMoveUpLabel.TabIndex = 8;
             this.ServerMoveUpLabel.Text = "Switch To Prev Server";
             this.ServerMoveUpLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -211,7 +211,7 @@
             this.ServerMoveDownLabel.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.ServerMoveDownLabel.Name = "ServerMoveDownLabel";
             this.ServerMoveDownLabel.Size = new System.Drawing.Size(154, 20);
-            this.ServerMoveDownLabel.TabIndex = 4;
+            this.ServerMoveDownLabel.TabIndex = 10;
             this.ServerMoveDownLabel.Text = "Switch To Next Server";
             this.ServerMoveDownLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
@@ -223,7 +223,7 @@
             this.SwitchProxyModeTextBox.Name = "SwitchProxyModeTextBox";
             this.SwitchProxyModeTextBox.ReadOnly = true;
             this.SwitchProxyModeTextBox.Size = new System.Drawing.Size(200, 25);
-            this.SwitchProxyModeTextBox.TabIndex = 8;
+            this.SwitchProxyModeTextBox.TabIndex = 1;
             this.SwitchProxyModeTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.SwitchProxyModeTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -235,7 +235,7 @@
             this.SwitchLoadBalanceTextBox.Name = "SwitchLoadBalanceTextBox";
             this.SwitchLoadBalanceTextBox.ReadOnly = true;
             this.SwitchLoadBalanceTextBox.Size = new System.Drawing.Size(200, 25);
-            this.SwitchLoadBalanceTextBox.TabIndex = 7;
+            this.SwitchLoadBalanceTextBox.TabIndex = 3;
             this.SwitchLoadBalanceTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.SwitchLoadBalanceTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -247,7 +247,7 @@
             this.SwitchAllowLanTextBox.Name = "SwitchAllowLanTextBox";
             this.SwitchAllowLanTextBox.ReadOnly = true;
             this.SwitchAllowLanTextBox.Size = new System.Drawing.Size(200, 25);
-            this.SwitchAllowLanTextBox.TabIndex = 10;
+            this.SwitchAllowLanTextBox.TabIndex = 5;
             this.SwitchAllowLanTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.SwitchAllowLanTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -259,7 +259,7 @@
             this.CallClipboardAndQRCodeScanningTextBox.Name = "CallClipboardAndQRCodeScanningTextBox";
             this.CallClipboardAndQRCodeScanningTextBox.ReadOnly = true;
             this.CallClipboardAndQRCodeScanningTextBox.Size = new System.Drawing.Size(200, 25);
-            this.CallClipboardAndQRCodeScanningTextBox.TabIndex = 11;
+            this.CallClipboardAndQRCodeScanningTextBox.TabIndex = 7;
             this.CallClipboardAndQRCodeScanningTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.CallClipboardAndQRCodeScanningTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -271,7 +271,7 @@
             this.ServerMoveUpTextBox.Name = "ServerMoveUpTextBox";
             this.ServerMoveUpTextBox.ReadOnly = true;
             this.ServerMoveUpTextBox.Size = new System.Drawing.Size(200, 25);
-            this.ServerMoveUpTextBox.TabIndex = 12;
+            this.ServerMoveUpTextBox.TabIndex = 9;
             this.ServerMoveUpTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.ServerMoveUpTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -283,7 +283,7 @@
             this.ServerMoveDownTextBox.Name = "ServerMoveDownTextBox";
             this.ServerMoveDownTextBox.ReadOnly = true;
             this.ServerMoveDownTextBox.Size = new System.Drawing.Size(200, 25);
-            this.ServerMoveDownTextBox.TabIndex = 13;
+            this.ServerMoveDownTextBox.TabIndex = 11;
             this.ServerMoveDownTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotkeyDown);
             this.ServerMoveDownTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HotkeyUp);
             // 
@@ -295,7 +295,7 @@
             this.RegHotkeysAtStartupCheckBox.Margin = new System.Windows.Forms.Padding(3, 9, 9, 9);
             this.RegHotkeysAtStartupCheckBox.Name = "RegHotkeysAtStartupCheckBox";
             this.RegHotkeysAtStartupCheckBox.Size = new System.Drawing.Size(15, 14);
-            this.RegHotkeysAtStartupCheckBox.TabIndex = 17;
+            this.RegHotkeysAtStartupCheckBox.TabIndex = 13;
             this.RegHotkeysAtStartupCheckBox.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel2
@@ -315,7 +315,7 @@
             this.tableLayoutPanel2.RowCount = 1;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel2.Size = new System.Drawing.Size(387, 37);
-            this.tableLayoutPanel2.TabIndex = 7;
+            this.tableLayoutPanel2.TabIndex = 1;
             // 
             // tableLayoutPanel3
             // 
@@ -334,7 +334,7 @@
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.Size = new System.Drawing.Size(503, 267);
-            this.tableLayoutPanel3.TabIndex = 8;
+            this.tableLayoutPanel3.TabIndex = 0;
             // 
             // HotkeySettingsForm
             // 

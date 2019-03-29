@@ -73,12 +73,14 @@ namespace Shadowsocks.View {
         private HotkeySettingsForm hotkeySettingsForm;
         private string _urlToOpen;
         //private System.Timers.Timer timerDetectVirus;
+        private System.Timers.Timer timerDisconnectCurrent;
         private System.Timers.Timer timerDelayCheckUpdate;
         private System.Timers.Timer timerUpdateLatency;
+        private System.Timers.Timer timerBalloonTipTimeout;
         public bool UpdateLatencyInterrupt = false;
 
-        private bool configfrom_open = false;
-        private bool subScribeForm_open = false;
+        public bool configfrom_open = false;
+        public bool subScribeForm_open = false;
         private List<EventParams> eventList = new List<EventParams>();
         
         public static AppBarForm appbarform;
@@ -120,6 +122,10 @@ namespace Shadowsocks.View {
 
             LoadCurrentConfiguration();
 
+            timerDisconnectCurrent = new System.Timers.Timer(1000.0 * 1);
+            timerDisconnectCurrent.AutoReset = false;
+            timerDisconnectCurrent.Elapsed += timerDisconnectCurrent_Elapsed;
+
             //this interval will change
             timerDelayCheckUpdate = new System.Timers.Timer(1000.0 * 10);
             timerDelayCheckUpdate.AutoReset = false;
@@ -127,7 +133,7 @@ namespace Shadowsocks.View {
             timerDelayCheckUpdate.Start();
 
 
-            timerUpdateLatency = new System.Timers.Timer(1000.0 * 3);
+            timerUpdateLatency = new System.Timers.Timer(1000.0 * 11);
             timerUpdateLatency.AutoReset = false;
             timerUpdateLatency.Elapsed += timerUpdateLatency_Elapsed;
             if(!_controller.GetCurrentConfiguration().nodeFeedAutoUpdate && _controller.GetCurrentConfiguration().nodeFeedAutoLatency)
@@ -158,14 +164,19 @@ namespace Shadowsocks.View {
             ShowBalloonTip(I18N.GetString(title), I18N.GetString(content), icon, timeout);
         }
 
+        private void timerDisconnectCurrent_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            DisconnectCurrent_Click(null, null);
+        }
+
         private void timerDelayCheckUpdate_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             if (timerDelayCheckUpdate != null) {
-                if (timerDelayCheckUpdate.Interval <= 1000.0 * 30) {
-                    timerDelayCheckUpdate.Interval = 1000.0 * 60 * 5;
-                }
-                else {
-                    timerDelayCheckUpdate.Interval = 1000.0 * 60 * 60 * 2;
-                }
+                //if (timerDelayCheckUpdate.Interval <= 1000.0 * 30) {
+                    timerDelayCheckUpdate.Interval = 1000.0 * 60 * 60 * 3;
+                //}
+                //else {
+                //    timerDelayCheckUpdate.Interval = 1000.0 * 60 * 60 * 2;
+                //}
             }
             //updateChecker.CheckUpdate(_controller.GetCurrentConfiguration());
 
@@ -236,6 +247,7 @@ namespace Shadowsocks.View {
                     }
                     configuration.configs[i].tcpingLatency();
                 }
+                _controller.SaveTimerUpdateLatency();
                 Utils.ReleaseMemory(true);
             }
             catch
@@ -450,7 +462,10 @@ namespace Shadowsocks.View {
             Configuration config = _controller.GetCurrentConfiguration();
             UpdateSysProxyMode(config);
             if (config.sysProxyMode == (int)ProxyMode.Direct)
-                DisconnectCurrent_Click(null, null);
+                timerDisconnectCurrent.Start();
+            //DisconnectCurrent_Click(null, null);
+            else if (timerDisconnectCurrent.Enabled)
+                timerDisconnectCurrent.Stop();
         }
 
         private void controller_ToggleRuleModeChanged(object sender, EventArgs e) {
@@ -691,17 +706,17 @@ namespace Shadowsocks.View {
             
             if (count > 0)
             {
-                updateFreeNodeChecker.countnum += 1;
+                updateFreeNodeChecker.CountNum += 1;
                 if (updateFreeNodeChecker.noitify)
                     ShowBalloonTip(I18N.GetString("Success"),
                         string.Format(I18N.GetString("Update subscribe {0} success"), lastGroup), ToolTipIcon.Info, 10000);
             }
             else
             {
-                if (!updateFreeNodeChecker.trieduseproxy)
+                if (!updateFreeNodeChecker.TriedUseProxy)
                 {
-                    updateFreeNodeChecker.countnum += 1;
-                    updateFreeNodeChecker.countfailurenum += 1;
+                    updateFreeNodeChecker.CountNum += 1;
+                    updateFreeNodeChecker.CountFailureNum += 1;
                     updateFreeNodeChecker.recordfailure();
                     if (lastGroup == null)
                     {
@@ -724,11 +739,27 @@ namespace Shadowsocks.View {
                     timerUpdateLatency.Interval = 1000.0;
                     timerUpdateLatency.Start();
                 }
-                if (updateFreeNodeChecker.countfailure != "")
+                if (updateFreeNodeChecker.CountFailure != "")
                 {
-                    if (updateFreeNodeChecker.countnum == updateFreeNodeChecker.countfailurenum)
-                        updateFreeNodeChecker.countfailure = I18N.GetString("All");
-                    ShowBalloonTip(I18N.GetString("Error"), String.Format(I18N.GetString("Update subscribe {0} failure"), updateFreeNodeChecker.countfailure), ToolTipIcon.Info, 1);
+                    updateFreeNodeChecker.SubscribeFailureItemsArrayListStr = updateFreeNodeChecker.CountFailure.Split(',');
+                    UpdateFreeNode.SubscribeFailureItemsArrayListInt = new int[updateFreeNodeChecker.SubscribeFailureItemsArrayListStr.Length];
+                    for (int i = 0; i < updateFreeNodeChecker.SubscribeFailureItemsArrayListStr.Length; i++)
+                        UpdateFreeNode.SubscribeFailureItemsArrayListInt[i] = int.Parse(updateFreeNodeChecker.SubscribeFailureItemsArrayListStr[i]);
+                    if (updateFreeNodeChecker.CountNum == updateFreeNodeChecker.CountFailureNum)
+                        updateFreeNodeChecker.CountFailure = I18N.GetString("All");
+
+                    _notifyIcon.BalloonTipClicked += BalloonTip_Clicked;
+                    if (timerBalloonTipTimeout == null)
+                    {
+                        timerBalloonTipTimeout = new System.Timers.Timer(1000.0 * 6);
+                        timerBalloonTipTimeout.AutoReset = false;
+                        timerBalloonTipTimeout.Elapsed += timerBalloonTipTimeout_Elapsed;
+                    }
+                    timerBalloonTipTimeout.Interval = 1000.0 * 6;
+                    timerBalloonTipTimeout.Start();
+
+                    ShowBalloonTip(I18N.GetString("Error"), String.Format(I18N.GetString("Update subscribe {0} failure"), updateFreeNodeChecker.CountFailure), ToolTipIcon.Info, 1);
+
                 }
                 else
                 {
@@ -738,6 +769,18 @@ namespace Shadowsocks.View {
                 updateSubscribeManager.ClearTask();
             }
 
+        }
+
+        private void timerBalloonTipTimeout_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            _notifyIcon.BalloonTipClicked -= BalloonTip_Clicked;
+        }
+
+        void BalloonTip_Clicked(object sender, EventArgs e)
+        {
+            timerBalloonTipTimeout.Stop();
+            _notifyIcon.BalloonTipClicked -= BalloonTip_Clicked;
+            SubscribeSetting_Click(null, null);
         }
 
         void updateChecker_NewVersionFound(object sender, EventArgs e) {
@@ -1091,7 +1134,6 @@ namespace Shadowsocks.View {
                 timerUpdateLatency.Elapsed -= timerUpdateLatency_Elapsed;
                 timerUpdateLatency.Stop();
                 timerUpdateLatency = null;
-                _controller.SaveTimerUpdateLatency();
             }
             if (_notifyIcon != null)
                 _notifyIcon.Visible = false;
@@ -1242,6 +1284,8 @@ namespace Shadowsocks.View {
         private void AServerItem_Click(object sender, EventArgs e) {
             MenuItem item = (MenuItem)sender;
             _controller.SelectServerIndex((int)item.Tag);
+            if (configfrom_open)
+                _controller.InvokeRefreshIndexInConfigFormFromServerLogForm();
             DisconnectCurrent_Click(null, null);
             //Configuration config = _controller.GetCurrentConfiguration();
             //for (int id = 0; id < config.configs.Count; ++id) {
@@ -1285,16 +1329,17 @@ namespace Shadowsocks.View {
             }
             timerUpdateLatency.Stop();
             UpdateLatencyInterrupt = true;
+            bool updateSubscribeIsInProgress = updateSubscribeManager.IsInProgress();
             if (!proxy)
             {
-                if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == true)
+                if (updateSubscribeIsInProgress && updateSubscribeManager._use_proxy)
                     UpdateFreeNodeInterrupt = true;
                 else
                     updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, false, true);
             }
             else
             {
-                if (updateSubscribeManager.IsInProgress() && updateSubscribeManager._use_proxy == false)
+                if (updateSubscribeIsInProgress && !updateSubscribeManager._use_proxy)
                     UpdateFreeNodeInterrupt = true;
                 else
                     updateSubscribeManager.CreateTask(_controller.GetCurrentConfiguration(), updateFreeNodeChecker, -1, true, true);

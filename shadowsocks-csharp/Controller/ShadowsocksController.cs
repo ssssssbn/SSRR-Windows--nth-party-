@@ -49,6 +49,9 @@ namespace Shadowsocks.Controller
         //public event EventHandler ShareOverLANStatusChanged;
         public event EventHandler ShowConfigFormEvent;
 
+        public event EventHandler RefreshIndexInConfigFormFromServerLogForm;
+
+
         // when user clicked Edit PAC, and PAC file has already created
         public event EventHandler<PathEventArgs> PACFileReadyToOpen;
         public event EventHandler<PathEventArgs> UserRuleFileReadyToOpen;
@@ -115,6 +118,8 @@ namespace Shadowsocks.Controller
         {
             _config.ServerLogFormLocation = config.ServerLogFormLocation;
             _config.IsServerLogFormTopmost = config.IsServerLogFormTopmost;
+            for (int i = 0; i < _config.configs.Count; i++)
+                _config.configs[i].latency = config.configs[i].latency;
             SaveConfig(_config, false);
         }
 
@@ -214,6 +219,16 @@ namespace Shadowsocks.Controller
             SelectServerIndex(_config.index, reload);
         }
 
+        public void SaveSubscribeConfig(Configuration config, bool reload = true)
+        {
+            _config.nodeFeedAutoUpdate = config.nodeFeedAutoUpdate;
+            _config.nodeFeedAutoLatency = config.nodeFeedAutoLatency;
+            _config.nodeFeedAutoUpdateUseProxy = config.nodeFeedAutoUpdateUseProxy;
+            _config.nodeFeedAutoUpdateTryUseProxy = config.nodeFeedAutoUpdateTryUseProxy;
+            _config.serverSubscribes = config.serverSubscribes;
+            SelectServerIndex(_config.index, reload);
+        }
+
         public void SaveServersPortMap(Configuration config)
         {
             _config.portMap = config.portMap;
@@ -229,7 +244,7 @@ namespace Shadowsocks.Controller
                 {
                     var server = new Server(ssURL, null);
                     for (int i = 0; i < _config.configs.Count; i++)
-                    if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port)
+                        if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port && server.group == _config.configs[i].group) 
                         return true;
                 }
                 catch (Exception e)
@@ -624,6 +639,11 @@ namespace Shadowsocks.Controller
         public void SaveTimerUpdateLatency()
         {
             SaveConfig(_config, false);
+        }
+
+        public void InvokeRefreshIndexInConfigFormFromServerLogForm()
+        {
+            RefreshIndexInConfigFormFromServerLogForm?.Invoke(this, new EventArgs());
         }
 
         //public void SaveServerLogFormTopmost(bool enable)

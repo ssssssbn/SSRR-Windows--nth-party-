@@ -11,6 +11,7 @@ using Shadowsocks.Properties;
 using System.Threading;
 using System.Runtime.InteropServices;
 
+
 namespace Shadowsocks.View
 {
     public partial class ServerLogForm : Form
@@ -967,6 +968,8 @@ namespace Shadowsocks.View
                     Configuration config = controller.GetCurrentConfiguration();
                     controller.SelectServerIndex(id);
                     DisconnectIfUnenableOrNonrandom();
+                    if(Program._viewController.configfrom_open)
+                        controller.InvokeRefreshIndexInConfigFormFromServerLogForm();
                     //Disconnect_Click(null, null);
                 }
                 if (ServerDataGrid.Columns[e.ColumnIndex].Name == "Group")
@@ -1061,6 +1064,9 @@ namespace Shadowsocks.View
             {
                 config.IsServerLogFormTopmost = this.TopMost;
             }
+            for (int i = 0; i < ServerSpeedLogList.Length; i++)
+                if (ServerSpeedLogList[i].avgConnectTime > 0)
+                    config.configs[i].latency = (int)ServerSpeedLogList[i].avgConnectTime / 1000;
             controller.SyncConfigFormServerLogForm(config);
 
             controller.ConfigChanged -= controller_ConfigChanged;

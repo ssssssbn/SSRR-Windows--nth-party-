@@ -26,7 +26,7 @@ namespace Shadowsocks
         [STAThread]
         static void Main(string[] args)
         {
-            string TheProxyModeInLaunching;
+            //string TheProxyModeInLaunching;
             if (Utils.IsVirusExist())
             {
                 return;

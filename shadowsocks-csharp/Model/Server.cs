@@ -88,7 +88,7 @@ namespace Shadowsocks.Model
                 }
                 catch
                 {
-
+                    Logging.Error("handler Shutdown failed.");
                 }
             }
         }
@@ -282,6 +282,7 @@ namespace Shadowsocks.Model
             ret.group = group;
             ret.enable = enable;
             ret.udp_over_tcp = udp_over_tcp;
+            ret.latency = latency;
             ret.id = id;
             ret.protocoldata = protocoldata;
             ret.obfsdata = obfsdata;
@@ -429,26 +430,134 @@ namespace Shadowsocks.Model
 
         public void ServerFromSS(string ssURL, string force_group)
         {
-            Regex UrlFinder = new Regex("^(?i)ss://([A-Za-z0-9+-/=_]+)(#(.+))?", RegexOptions.IgnoreCase),
-                DetailsParser = new Regex("^((?<method>.+):(?<password>.*)@(?<hostname>.+?)" +
-                                      ":(?<port>\\d+?))$", RegexOptions.IgnoreCase);
-
-            var match = UrlFinder.Match(ssURL);
-            if (!match.Success)
-                throw new FormatException();
-
-            var base64 = match.Groups[1].Value;
-            match = DetailsParser.Match(Encoding.UTF8.GetString(Convert.FromBase64String(
-                base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='))));
-            protocol = "origin";
-            method = match.Groups["method"].Value;
-            password = match.Groups["password"].Value;
-            server = match.Groups["hostname"].Value;
-            server_port = int.Parse(match.Groups["port"].Value);
-            if (!String.IsNullOrEmpty(force_group))
-                group = force_group;
+            Server legacyServer = ParseLegacyURL(ssURL, force_group);
+            if (legacyServer != null)   //legacy
+            {
+                protocol = legacyServer.protocol;
+                method = legacyServer.method;
+                password = legacyServer.password;
+                server = legacyServer.server;
+                server_port = legacyServer.server_port;
+                group = legacyServer.group;
+            }
             else
-                group = "";
+            {
+                try
+                {
+                    Uri parsedUrl;
+                    parsedUrl = new Uri(ssURL);
+                //}
+                //catch (UriFormatException)
+                //{
+                //    Logging.Info("UriFormatException");
+                //}
+                //Server server = new Server
+                //{
+                string tmp_remarks = parsedUrl.GetComponents(UriComponents.Fragment, UriFormat.Unescaped);
+                string tmp_server = parsedUrl.IdnHost;
+                int tmp_server_port = parsedUrl.Port;
+                //};
+
+                // parse base64 UserInfo
+                string rawUserInfo = parsedUrl.GetComponents(UriComponents.UserInfo, UriFormat.Unescaped);
+                string base64 = rawUserInfo.Replace('-', '+').Replace('_', '/');    // Web-safe base64 to normal base64
+                string userInfo = "";
+                try
+                {
+                    userInfo = Encoding.UTF8.GetString(Convert.FromBase64String(
+                    base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=')));
+                }
+                catch (FormatException)
+                {
+                    Logging.Info("FormatException");
+                }
+                string[] userInfoParts = userInfo.Split(new char[] { ':' }, 2);
+                if (userInfoParts.Length != 2)
+                {
+                    Logging.Info("userInfoParts error:Length is not 2!");
+                    return;
+                }
+                method = userInfoParts[0];
+                password = userInfoParts[1];
+
+                remarks = tmp_remarks;
+                server = tmp_server;
+                server_port = tmp_server_port;
+
+                if (!String.IsNullOrEmpty(force_group))
+                    group = force_group;
+                else
+                    group = "";
+                }
+                catch (Exception e)
+                {
+                    Logging.LogUsefulException(e);
+                }
+                //NameValueCollection queryParameters = HttpUtility.ParseQueryString(parsedUrl.Query);
+                //string[] pluginParts = HttpUtility.UrlDecode(queryParameters["plugin"] ?? "").Split(new[] { ';' }, 2);
+                //if (pluginParts.Length > 0)
+                //{
+                //    server.plugin = pluginParts[0] ?? "";
+                //}
+
+                //if (pluginParts.Length > 1)
+                //{
+                //    server.plugin_opts = pluginParts[1] ?? "";
+                //}
+            }
+            //Regex UrlFinder = new Regex("^(?i)ss://([A-Za-z0-9+-/=_]+)(#(.+))?", RegexOptions.IgnoreCase),
+            //    DetailsParser = new Regex("^((?<method>.+):(?<password>.*)@(?<hostname>.+?)" +
+            //                          ":(?<port>\\d+?))$", RegexOptions.IgnoreCase);
+
+                //var match = UrlFinder.Match(ssURL);
+                //if (!match.Success)
+                //    throw new FormatException();
+
+                //var base64 = match.Groups[1].Value;
+                //match = DetailsParser.Match(Encoding.UTF8.GetString(Convert.FromBase64String(
+                //    base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='))));
+                //protocol = "origin";
+                //method = match.Groups["method"].Value;
+                //password = match.Groups["password"].Value;
+                //server = match.Groups["hostname"].Value;
+                //server_port = int.Parse(match.Groups["port"].Value);
+                //if (!String.IsNullOrEmpty(force_group))
+                //    group = force_group;
+                //else
+                //    group = "";
+            }
+
+        private Server ParseLegacyURL(string ssURL, string force_group)
+        {
+            try
+            {
+                Regex UrlFinder = new Regex("^(?i)ss://([A-Za-z0-9+-/=_]+)(#(.+))?", RegexOptions.IgnoreCase),
+                    DetailsParser = new Regex("^((?<method>.+):(?<password>.*)@(?<hostname>.+?)" +
+                                          ":(?<port>\\d+?))$", RegexOptions.IgnoreCase);
+
+                var match = UrlFinder.Match(ssURL);
+                if (!match.Success)
+                    throw new FormatException();
+
+                Server server = new Server();
+                var base64 = match.Groups[1].Value;
+                match = DetailsParser.Match(Encoding.UTF8.GetString(Convert.FromBase64String(
+                    base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='))));
+                server.protocol = "origin";
+                server.method = match.Groups["method"].Value;
+                server.password = match.Groups["password"].Value;
+                server.server = match.Groups["hostname"].Value;
+                server.server_port = int.Parse(match.Groups["port"].Value);
+                if (!String.IsNullOrEmpty(force_group))
+                    server.group = force_group;
+                else
+                    server.group = "";
+                return server;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string GetSSLinkForServer()

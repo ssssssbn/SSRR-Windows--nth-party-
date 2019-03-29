@@ -56,6 +56,7 @@ namespace Shadowsocks.View
             }
             UpdateTexts();
             controller.ConfigChanged += controller_ConfigChanged;
+            controller.RefreshIndexInConfigFormFromServerLogForm += controller_IndexChangedFromServerLogFrom;
 
             LoadCurrentConfiguration();
             if (_modifiedConfiguration.index >= 0 && _modifiedConfiguration.index < _modifiedConfiguration.configs.Count)
@@ -192,6 +193,12 @@ namespace Shadowsocks.View
             LoadCurrentConfiguration();
         }
 
+        private void controller_IndexChangedFromServerLogFrom(object sender, EventArgs e)
+        {
+            Configuration tmpconfiguration = controller.GetCurrentConfiguration();
+            _oldSelectedID = tmpconfiguration.configs[tmpconfiguration.index].id;
+        }
+
         private void ShowWindow()
         {
             this.Opacity = 1;
@@ -221,6 +228,7 @@ namespace Shadowsocks.View
                     remarks = RemarksTextBox.Text,
                     group = TextGroup.Text.Trim(),
                     udp_over_tcp = CheckUDPoverUDP.Checked,
+                    latency = _modifiedConfiguration.configs[_oldSelectedIndex].latency,
                     //obfs_udp = CheckObfsUDP.Checked,
                     id = _SelectedID
                 };
@@ -382,6 +390,8 @@ namespace Shadowsocks.View
 
         private void LoadConfiguration(Configuration configuration)
         {
+            ServersListBox.BeginUpdate();
+
             if (ServersListBox.Items.Count != _modifiedConfiguration.configs.Count)
             {
                 ServersListBox.Items.Clear();
@@ -411,6 +421,8 @@ namespace Shadowsocks.View
                     }
                 }
             }
+
+            ServersListBox.EndUpdate();
         }
 
         public void SetServerListSelectedIndex(int index)
@@ -530,6 +542,7 @@ namespace Shadowsocks.View
         private void OKButton_Click(object sender, EventArgs e)
         {
             controller.ConfigChanged -= controller_ConfigChanged;
+            controller.RefreshIndexInConfigFormFromServerLogForm -= controller_IndexChangedFromServerLogFrom;
             this.FormClosed -= new System.Windows.Forms.FormClosedEventHandler(this.ConfigForm_FormClosed);
 
             if (SaveOldSelectedServer() == -1)
@@ -541,6 +554,8 @@ namespace Shadowsocks.View
                 MessageBox.Show(I18N.GetString("Please add at least one server"));
                 return;
             }
+            //if (_modifiedConfiguration.index > _modifiedConfiguration.configs.Count)
+            //    _modifiedConfiguration.index = 0;
             if (_oldSelectedID != null)
             {
                 for (int i = 0; i < _modifiedConfiguration.configs.Count; ++i)
@@ -550,8 +565,11 @@ namespace Shadowsocks.View
                         _modifiedConfiguration.index = i;
                         break;
                     }
+                    //else if (i == _modifiedConfiguration.configs.Count)
+                    //    _modifiedConfiguration.index = 0;
                 }
             }
+
             controller.SaveServersConfig(_modifiedConfiguration);
             callresumeUpdateLatency();
             this.Close();
@@ -570,6 +588,7 @@ namespace Shadowsocks.View
         private void ConfigForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             controller.ConfigChanged -= controller_ConfigChanged;
+            controller.RefreshIndexInConfigFormFromServerLogForm -= controller_IndexChangedFromServerLogFrom;
             callresumeUpdateLatency();
         }
 
@@ -807,7 +826,7 @@ namespace Shadowsocks.View
 
         private void UpButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_UpButton.Interval = 100;
+            timer_UpButton.Interval = 50;
             timer_UpButton.Enabled = true;
         }
 
@@ -830,7 +849,7 @@ namespace Shadowsocks.View
 
         private void DownButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_DownButton.Interval = 100;
+            timer_DownButton.Interval = 50;
             timer_DownButton.Enabled = true;
         }
 
@@ -853,7 +872,7 @@ namespace Shadowsocks.View
 
         private void DeleteButton_MouseDown(object sender, MouseEventArgs e)
         {
-            timer_DeleteButton.Interval = 200;
+            timer_DeleteButton.Interval = 100;
             timer_DeleteButton.Enabled = true;
         }
 

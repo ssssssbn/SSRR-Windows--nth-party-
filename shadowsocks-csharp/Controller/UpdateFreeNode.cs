@@ -12,12 +12,13 @@ using System.Windows.Forms;
 using Shadowsocks;
 using System.IO;
 
+
 namespace Shadowsocks.Controller
 {
     public class UpdateFreeNode
     {
-        private const string UpdateURL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenodeplain.txt";
-
+        //private const string UpdateURL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenodeplain.txt";
+        
         public event EventHandler NewFreeNodeFound;
         public string FreeNodeResult;
         public ServerSubscribe subscribeTask;
@@ -25,10 +26,12 @@ namespace Shadowsocks.Controller
 
         public const string Name = "ShadowsocksR";
 
-        public bool trieduseproxy = false;
-        public int countnum = 0;
-        public int countfailurenum = 0;
-        public string countfailure = "";
+        public bool TriedUseProxy = false;
+        public int CountNum = 0;
+        public int CountFailureNum = 0;
+        public string CountFailure = "";
+        public string[] SubscribeFailureItemsArrayListStr;
+        public static int[] SubscribeFailureItemsArrayListInt;
 
         private Configuration _config;
         private WebClient http;
@@ -80,8 +83,9 @@ namespace Shadowsocks.Controller
                 }
 
                 timerDownloadStringAsyncTimeout.Start();
-                http.DownloadStringAsync(new Uri(URL != null ? URL : UpdateURL));
-               
+                http.DownloadStringAsync(new Uri(URL != null ? URL : ServerSubscribe.DEFAULT_FEED_URL)); //UpdateURL
+
+
             }
             catch (Exception e)
             {
@@ -99,9 +103,9 @@ namespace Shadowsocks.Controller
                 string response = e.Result;
                 FreeNodeResult = response;
 
-                //UpdateSubscribeManager.countnum += 1;
-                if (trieduseproxy)
-                    trieduseproxy = false;
+                //UpdateSubscribeManager.CountNum += 1;
+                if (TriedUseProxy)
+                    TriedUseProxy = false;
                 //http.Dispose();
                 //if (NewFreeNodeFound != null)
                 //{
@@ -110,15 +114,15 @@ namespace Shadowsocks.Controller
             }
             catch (Exception ex)
             {
-                if(_config.nodeFeedAutoUpdateTryUseProxy && http.Proxy==null && !trieduseproxy)
+                if(_config.nodeFeedAutoUpdateTryUseProxy && http.Proxy==null && !TriedUseProxy)
                 {
-                    trieduseproxy = true;
+                    TriedUseProxy = true;
                     NewFreeNodeFound?.Invoke(this, new EventArgs());
                     return;
                 }
-                trieduseproxy = false;
-                //countnum += 1;
-                //countfailurenum += 1;
+                TriedUseProxy = false;
+                //CountNum += 1;
+                //CountFailureNum += 1;
 
                 if (e.Error != null)
                 {
@@ -146,10 +150,10 @@ namespace Shadowsocks.Controller
 
         public void recordfailure()
         {
-            if (countfailure == "")
-                countfailure = countfailure + countnum.ToString();
+            if (CountFailure == "")
+                CountFailure += CountNum.ToString();
             else
-                countfailure = countfailure + "," + countnum.ToString();
+                CountFailure += "," + CountNum.ToString();
         }
 
         public void Disposesomething()
@@ -169,10 +173,10 @@ namespace Shadowsocks.Controller
             {
                 _config = null;
             }
-            countnum = 0;
-            countfailurenum = 0;
-            countfailure = "";
-            trieduseproxy = false;
+            CountNum = 0;
+            CountFailureNum = 0;
+            CountFailure = "";
+            TriedUseProxy = false;
         }
     }
 
@@ -197,10 +201,13 @@ namespace Shadowsocks.Controller
                 if (index < 0)
                 {
                     _serverSubscribes = new List<ServerSubscribe>();
-                    for (int i = 0; i < config.serverSubscribes.Count; ++i)
-                    {
-                        _serverSubscribes.Add(config.serverSubscribes[i]);
-                    }
+                    if(config.serverSubscribes.Count==0)
+                        _serverSubscribes.Add(new ServerSubscribe());
+                    else
+                        for (int i = 0; i < config.serverSubscribes.Count; ++i)
+                        {
+                            _serverSubscribes.Add(config.serverSubscribes[i]);
+                        }
                 }
                 else if (index < _config.serverSubscribes.Count)
                 {
@@ -217,7 +224,7 @@ namespace Shadowsocks.Controller
 
         public bool Next()
         {
-            if(_updater.countnum!=0 && !_updater.trieduseproxy)
+            if(_updater.CountNum!=0 && !_updater.TriedUseProxy)
                 _serverSubscribes.RemoveAt(0);
             if (_serverSubscribes.Count == 0)
             {
@@ -227,7 +234,7 @@ namespace Shadowsocks.Controller
             else
             {
                 _URL = _serverSubscribes[0].URL;
-                if ((!_use_proxy && _serverSubscribes[0].UseProxy) || _updater.trieduseproxy) 
+                if ((!_use_proxy && _serverSubscribes[0].UseProxy) || _updater.TriedUseProxy) 
                     _updater.CheckUpdate(_config, _serverSubscribes[0], true, _noitify);
                 else
                     _updater.CheckUpdate(_config, _serverSubscribes[0], _use_proxy, _noitify);
