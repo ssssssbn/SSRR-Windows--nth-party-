@@ -258,6 +258,7 @@ namespace Shadowsocks.Controller
                 {
                     conn.Shutdown(SocketShutdown.Both);
                     conn.Close();
+                    return;
                 }
 
                 int local_port = ((IPEndPoint)conn.LocalEndPoint).Port;

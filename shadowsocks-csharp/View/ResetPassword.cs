@@ -12,28 +12,42 @@ namespace Shadowsocks.View
         public ResetPassword()
         {
             InitializeComponent();
+            
             this.Icon = Icon.FromHandle(Resources.ssw128.GetHicon());
+
+            UpdateText();
+
+        }
+
+        private void UpdateText()
+        {
             this.Text = I18N.GetString(this.Text);//"ResetPassword"
             this.label4.Text = I18N.GetString(this.label4.Text);
             this.label2.Text = I18N.GetString(this.label2.Text);
             this.label1.Text = I18N.GetString(this.label1.Text);
             this.label3.Text = I18N.GetString(this.label3.Text);
-            this.buttonOK.Text = I18N.GetString(this.buttonOK.Text);
+            this.btnOK.Text = I18N.GetString(this.btnOK.Text);
+            this.btnCancel.Text = I18N.GetString(this.btnCancel.Text);
         }
 
-        private void buttonOK_Click(object sender, EventArgs e)
+        private void btnOK_Click(object sender, EventArgs e)
         {
             if (textPassword.Text == textPassword2.Text && Configuration.SetPasswordTry(textOld.Text, textPassword.Text))
             {
                 Configuration cfg = Configuration.Load();
                 Configuration.SetPassword(textPassword.Text);
                 Configuration.Save(cfg);
-                Close();
+                this.Close();
             }
             else
             {
                 MessageBox.Show(I18N.GetString("Password NOT match"), I18N.GetString("Error"), MessageBoxButtons.OK);
             }
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
 
         private void ResetPassword_KeyDown(object sender, KeyEventArgs e)
@@ -50,7 +64,7 @@ namespace Shadowsocks.View
                 }
                 else
                 {
-                    buttonOK_Click(this, new EventArgs());
+                    btnOK_Click(this, new EventArgs());
                 }
             }
         }

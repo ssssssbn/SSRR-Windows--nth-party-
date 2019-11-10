@@ -96,9 +96,9 @@ namespace Shadowsocks.Controller
 
         public void Start(Configuration configuration)
         {
+            Kill();
             if (_process == null)
             {
-                Kill();
                 string polipoConfig = Resources.privoxy_conf;
                 _runningPort = this.GetFreePort();
                 polipoConfig = polipoConfig.Replace("__SOCKS_PORT__", configuration.localPort.ToString());
@@ -115,11 +115,13 @@ namespace Shadowsocks.Controller
         {
             _process = new Process();
             // Configure the process using the StartInfo properties.
+            //string testpath = runningPath + "\\trojan/trojan.exe";
             _process.StartInfo.FileName = runningPath + _exeName;
             _process.StartInfo.Arguments = " \"" + runningPath + "/privoxy.conf\"";
             _process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             _process.StartInfo.UseShellExecute = true;
             _process.StartInfo.CreateNoWindow = true;
+            //string testWorkingDirectory = System.Windows.Forms.Application.StartupPath + "\\temp\\trojan";
             _process.StartInfo.WorkingDirectory = System.Windows.Forms.Application.StartupPath;
             //_process.StartInfo.RedirectStandardOutput = true;
             //_process.StartInfo.RedirectStandardError = true;

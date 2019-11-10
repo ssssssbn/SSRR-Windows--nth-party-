@@ -10,7 +10,8 @@ namespace Shadowsocks.Controller
 {
     public class UpdateChecker
     {
-        private const string UpdateURL = "https://raw.githubusercontent.com/CGDF-Github/SSRR-Windows/master/shadowsocks-csharp/ssr-win-4.0.xml";
+        private const string UpdateURL = "https://github.com/ssssssbn/SSRR-Windows--nth-party-//master/shadowsocks-csharp/ssr-win-4.0.xml";
+        private const string User_Agent = @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36";
 
         public string LatestVersionNumber;
         public string LatestVersionURL;
@@ -18,7 +19,7 @@ namespace Shadowsocks.Controller
 
         public const string Name = "ShadowsocksR";
         public const string Copyright = "Copyright © BreakWa11 2017. Fork from Shadowsocks by clowwindy";
-        public const string Version = "5.1.5.4";
+        public const string Version = "5.1.5.5";
 #if !_CONSOLE
         public const string NetVer = "4.0";
 #else
@@ -38,10 +39,7 @@ namespace Shadowsocks.Controller
             try
             {
                 WebClient http = new WebClient();
-                http.Headers.Add("User-Agent",
-                String.IsNullOrEmpty(config.proxyUserAgent) ?
-                "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36"
-                : config.proxyUserAgent);                
+                http.Headers.Add("User-Agent", String.IsNullOrEmpty(config.proxyUserAgent) ? User_Agent : config.proxyUserAgent);     
                 if (UseProxy)
                 {
                     WebProxy proxy = new WebProxy(IPAddress.Loopback.ToString(), config.localPort);
@@ -180,13 +178,13 @@ namespace Shadowsocks.Controller
                 }
                 if (versions.Count == 0)
                 {
+                    LatestVersionNumber = "0";
                     return;
                 }
                 // sort versions
                 SortVersions(versions);
                 LatestVersionURL = versions[versions.Count - 1];
                 LatestVersionNumber = ParseVersionFromURL(LatestVersionURL);
-                NewVersionFound?.Invoke(this, new EventArgs());
             }
             catch (Exception ex)
             {
@@ -195,8 +193,13 @@ namespace Shadowsocks.Controller
                     Logging.Debug(e.Error.ToString());
                 }
                 Logging.Debug(ex.ToString());
-                NewVersionFound?.Invoke(this, new EventArgs());
+                LatestVersionNumber = "-1";
+                //NewVersionFound?.Invoke(this, new EventArgs());
                 return;
+            }
+            finally
+            {
+                NewVersionFound?.Invoke(this, new EventArgs());
             }
         }
     }

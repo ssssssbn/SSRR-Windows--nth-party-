@@ -7,7 +7,7 @@ using Shadowsocks.Model;
 namespace Shadowsocks.Controller
 {
 
-    class SpeedTester
+    public class SpeedTester
     {
 #if DEBUG
         struct TransLog
@@ -64,10 +64,10 @@ namespace Shadowsocks.Controller
             sizeDownload += size;
             if (transfer != null && server != null)
             {
-                transfer.AddDownload(server, size);
+                transfer.AddtotalDownload(server, size);
             }
-            upload_cnt = 0;
-            download_cnt += 1;
+            //upload_cnt = 0;
+            //download_cnt += 1;
 #if DEBUG
             if (sizeTransfer.Count < 1024 * 128)
             {
@@ -77,7 +77,8 @@ namespace Shadowsocks.Controller
                 }
             }
 #endif
-            return download_cnt > 30;
+            return false;
+            //return download_cnt > 30;
             //return sizeDownload > 1024 * 256 && sizeDownload > (DateTime.Now - timeConnectEnd).TotalSeconds * 1024 * 16;
         }
         public void AddProtocolRecvSize(int size)
@@ -95,10 +96,10 @@ namespace Shadowsocks.Controller
             sizeUpload += size;
             if (transfer != null && server != null)
             {
-                transfer.AddUpload(server, size);
+                transfer.AddtotalUpload(server, size);
             }
-            upload_cnt = 1;
-            download_cnt = 0;
+            //upload_cnt += 1;
+            //download_cnt = 0;
 #if DEBUG
             if (sizeTransfer.Count < 1024 * 128)
             {
@@ -108,7 +109,8 @@ namespace Shadowsocks.Controller
                 }
             }
 #endif
-            return upload_cnt > 30;
+            return false;
+            //return upload_cnt > 30;
             //return sizeUpload > 1024 * 256 && sizeUpload > (DateTime.Now - timeConnectEnd).TotalSeconds * 1024 * 16;
         }
 

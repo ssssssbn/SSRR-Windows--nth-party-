@@ -84,7 +84,7 @@ namespace Shadowsocks.Model
             {
                 try
                 {
-                    handler.Shutdown();
+                    handler.Shutdown(true);
                 }
                 catch
                 {
@@ -106,8 +106,8 @@ namespace Shadowsocks.Model
     {
         public string id;
         public string server;
-        public int server_port;
-        public int server_udp_port;
+        public ushort server_port;
+        public ushort server_udp_port;
         public string password;
         public string method;
         public string protocol;
@@ -119,7 +119,21 @@ namespace Shadowsocks.Model
         public bool enable;
         public bool udp_over_tcp;
 
-        public int latency;
+        public long latency
+        {
+            get
+            {
+                if (serverSpeedLog != null)
+                    return serverSpeedLog.AvgConnectTime / 1000;
+                else
+                    return -1;
+            }
+            set
+            {
+                if (serverSpeedLog != null)
+                    serverSpeedLog.AvgConnectTime = value * 1000;
+            }
+        }
 
         public static int LATENCY_ERROR = -2;
         public static int LATENCY_PENDING = -1;
@@ -133,14 +147,14 @@ namespace Shadowsocks.Model
         private Connections Connections = new Connections();
         private static Server forwardServer = new Server();
 
-        public void CopyServer(Server Server)
+        public void InheritDataFrom(Server Server)
         {
             protocoldata = Server.protocoldata;
             obfsdata = Server.obfsdata;
             serverSpeedLog = Server.serverSpeedLog;
             dnsBuffer = Server.dnsBuffer;
             Connections = Server.Connections;
-            enable = Server.enable;
+            //enable = Server.enable;
         }
 
         public void CopyServerInfo(Server Server)
@@ -175,6 +189,7 @@ namespace Shadowsocks.Model
         }
         public void SetServerSpeedLog(ServerSpeedLog log)
         {
+            log.AvgConnectTime = serverSpeedLog.AvgConnectTime;
             serverSpeedLog = log;
         }
 
@@ -268,24 +283,49 @@ namespace Shadowsocks.Model
             }
         }
 
-        public Server Clone()
+        public void CopyBaseFrom(Server s)
+        {
+            id = s.id;
+            server = s.server;
+            server_port = s.server_port;
+            server_udp_port = s.server_udp_port;
+            password = s.password;
+            method = s.method;
+            protocol = s.protocol;
+            protocolparam = s.protocolparam;
+            obfs = s.obfs;
+            obfsparam = s.obfsparam;
+            remarks_base64 = s.remarks_base64;
+            group = s.group;
+            enable = s.enable;
+            udp_over_tcp = s.udp_over_tcp;
+            latency = s.latency;
+        }
+        public Server CloneBase(bool newserver=false)
         {
             Server ret = new Server();
+            if (!newserver)
+                ret.id = id;
             ret.server = server;
             ret.server_port = server_port;
+            ret.server_udp_port = server_udp_port;
             ret.password = password;
             ret.method = method;
             ret.protocol = protocol;
+            ret.protocolparam = protocolparam ?? "";
             ret.obfs = obfs;
             ret.obfsparam = obfsparam ?? "";
             ret.remarks_base64 = remarks_base64;
             ret.group = group;
-            ret.enable = enable;
+            if (!newserver)
+                ret.enable = enable;
+            else
+                ret.enable = true;
             ret.udp_over_tcp = udp_over_tcp;
-            ret.latency = latency;
-            ret.id = id;
-            ret.protocoldata = protocoldata;
-            ret.obfsdata = obfsdata;
+            if (!newserver)
+                ret.latency = latency;
+            else
+                ret.latency = -1;
             return ret;
         }
 
@@ -311,17 +351,25 @@ namespace Shadowsocks.Model
 
         public Server(string ssURL, string force_group) : this()
         {
-            if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                ServerFromSS(ssURL, force_group);
+                if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase))
+                {
+                    ServerFromSS(ssURL, force_group);
+                }
+                else if (ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
+                {
+                    ServerFromSSR(ssURL, force_group);
+                }
+                else
+                {
+                    throw new FormatException();
+                }
             }
-            else if (ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
+            catch (FormatException)
             {
-                ServerFromSSR(ssURL, force_group);
-            }
-            else
-            {
-                throw new FormatException();
+                enable = false;
+                group = "Invalid link format";
             }
         }
 
@@ -390,7 +438,7 @@ namespace Shadowsocks.Model
                 throw new FormatException();
 
             server = match.Groups[1].Value;
-            server_port = int.Parse(match.Groups[2].Value);
+            server_port = ushort.Parse(match.Groups[2].Value);
             protocol = match.Groups[3].Value.Length == 0 ? "origin" : match.Groups[3].Value;
             protocol = protocol.Replace("_compatible", "");
             method = match.Groups[4].Value;
@@ -422,7 +470,7 @@ namespace Shadowsocks.Model
             }
             if (params_dict.ContainsKey("udpport"))
             {
-                server_udp_port = int.Parse(params_dict["udpport"]);
+                server_udp_port = ushort.Parse(params_dict["udpport"]);
             }
             if (!String.IsNullOrEmpty(force_group))
                 group = force_group;
@@ -446,48 +494,48 @@ namespace Shadowsocks.Model
                 {
                     Uri parsedUrl;
                     parsedUrl = new Uri(ssURL);
-                //}
-                //catch (UriFormatException)
-                //{
-                //    Logging.Info("UriFormatException");
-                //}
-                //Server server = new Server
-                //{
-                string tmp_remarks = parsedUrl.GetComponents(UriComponents.Fragment, UriFormat.Unescaped);
-                string tmp_server = parsedUrl.IdnHost;
-                int tmp_server_port = parsedUrl.Port;
-                //};
+                    //}
+                    //catch (UriFormatException)
+                    //{
+                    //    Logging.Info("UriFormatException");
+                    //}
+                    //Server server = new Server
+                    //{
+                    string tmp_remarks = parsedUrl.GetComponents(UriComponents.Fragment, UriFormat.Unescaped);
+                    string tmp_server = parsedUrl.IdnHost;
+                    ushort tmp_server_port = (ushort)parsedUrl.Port;
+                    //};
 
-                // parse base64 UserInfo
-                string rawUserInfo = parsedUrl.GetComponents(UriComponents.UserInfo, UriFormat.Unescaped);
-                string base64 = rawUserInfo.Replace('-', '+').Replace('_', '/');    // Web-safe base64 to normal base64
-                string userInfo = "";
-                try
-                {
-                    userInfo = Encoding.UTF8.GetString(Convert.FromBase64String(
-                    base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=')));
-                }
-                catch (FormatException)
-                {
-                    Logging.Info("FormatException");
-                }
-                string[] userInfoParts = userInfo.Split(new char[] { ':' }, 2);
-                if (userInfoParts.Length != 2)
-                {
-                    Logging.Info("userInfoParts error:Length is not 2!");
-                    return;
-                }
-                method = userInfoParts[0];
-                password = userInfoParts[1];
+                    // parse base64 UserInfo
+                    string rawUserInfo = parsedUrl.GetComponents(UriComponents.UserInfo, UriFormat.Unescaped);
+                    string base64 = rawUserInfo.Replace('-', '+').Replace('_', '/');    // Web-safe base64 to normal base64
+                    string userInfo = "";
+                    try
+                    {
+                        userInfo = Encoding.UTF8.GetString(Convert.FromBase64String(
+                        base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=')));
+                    }
+                    catch (FormatException)
+                    {
+                        Logging.Info("FormatException");
+                    }
+                    string[] userInfoParts = userInfo.Split(new char[] { ':' }, 2);
+                    if (userInfoParts.Length != 2)
+                    {
+                        Logging.Info("userInfoParts error:Length is not 2!");
+                        return;
+                    }
+                    method = userInfoParts[0];
+                    password = userInfoParts[1];
 
-                remarks = tmp_remarks;
-                server = tmp_server;
-                server_port = tmp_server_port;
+                    remarks = tmp_remarks;
+                    server = tmp_server;
+                    server_port = tmp_server_port;
 
-                if (!String.IsNullOrEmpty(force_group))
-                    group = force_group;
-                else
-                    group = "";
+                    if (!String.IsNullOrEmpty(force_group))
+                        group = force_group;
+                    else
+                        group = "";
                 }
                 catch (Exception e)
                 {
@@ -547,7 +595,7 @@ namespace Shadowsocks.Model
                 server.method = match.Groups["method"].Value;
                 server.password = match.Groups["password"].Value;
                 server.server = match.Groups["hostname"].Value;
-                server.server_port = int.Parse(match.Groups["port"].Value);
+                server.server_port = ushort.Parse(match.Groups["port"].Value);
                 if (!String.IsNullOrEmpty(force_group))
                     server.group = force_group;
                 else
@@ -595,15 +643,15 @@ namespace Shadowsocks.Model
             return "ssr://" + base64;
         }
 
-        public bool isEnable()
-        {
-            return enable;
-        }
+        //public bool isEnable()
+        //{
+        //    return enable;
+        //}
 
-        public void setEnable(bool enable)
-        {
-            this.enable = enable;
-        }
+        //public void setEnable(bool enable)
+        //{
+        //    this.enable = enable;
+        //}
 
         public object getObfsData()
         {
@@ -625,9 +673,10 @@ namespace Shadowsocks.Model
 
         public void tcpingLatency()
         {
-            var latencies = new List<double>();
-            var sock = new TcpClient();
-            var stopwatch = new Stopwatch();
+            
+            double latencies = -1;
+            TcpClient sock = null;
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             try
             {
@@ -635,33 +684,41 @@ namespace Shadowsocks.Model
             }
             catch (Exception)
             {
+                stopwatch.Stop();
                 latency = LATENCY_ERROR;
                 return;
             }
 
-            var result = sock.BeginConnect(server, server_port, null, null);
-            if (result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
-            {
-                stopwatch.Stop();
-                latencies.Add(stopwatch.Elapsed.TotalMilliseconds);
-            }
+            if (server.Contains(':'))
+                sock = new TcpClient(AddressFamily.InterNetworkV6);
             else
-            {
-                stopwatch.Stop();
-            }
+                sock = new TcpClient(AddressFamily.InterNetwork);
 
             try
             {
+                var result = sock.BeginConnect(server, server_port, null, null);
+                if (result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
+                {
+                    latencies = stopwatch.Elapsed.TotalMilliseconds;
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Log(LogLevel.Error, e.Message);
+            }
+            finally
+            {
+                stopwatch.Stop();
                 sock.Close();
             }
-            catch (Exception)
-            {
 
-            }
-
-            if (latencies.Count != 0)
+            if (0 < latencies)
             {
-                latency = (int)latencies.Average();
+                if (latencies < 1)
+                    latencies = 1;
+                latency = (long)latencies;
+                //if (serverSpeedLog.AvgConnectTime != -1)
+                //    serverSpeedLog.AddConnectTime(latency, true);
             }
             else
             {

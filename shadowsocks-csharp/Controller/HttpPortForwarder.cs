@@ -117,7 +117,9 @@ namespace Shadowsocks.Controller
                     }
                     else
                     {
-                        Console.WriteLine("failed to recv data in HttpHandshakeRecv");
+                        if (_firstPacketLength != 0)
+                            Logging.Log(LogLevel.Error, "failed to recv data in HttpHandshakeRecv");
+                            //Console.WriteLine("failed to recv data in HttpHandshakeRecv");
                         Close();
                     }
                 }

@@ -418,7 +418,7 @@ namespace Shadowsocks.Controller
                             s.ServerSpeedLog().AddErrorTimes();
                             if (s.ServerSpeedLog().ErrorConnectTimes >= 3 && cfg.autoSwitchOff)
                             {
-                                s.setEnable(false);
+                                s.enable = false;
                             }
                         }
                     }
@@ -636,7 +636,7 @@ namespace Shadowsocks.Controller
         {
             if (local_error)
                 return false;
-            if (cfg.reconnectTimesRemain > 0)
+            if (cfg != null && cfg.reconnectTimesRemain > 0) 
             {
                 if (this.State == ConnectState.CONNECTING)
                 {
@@ -719,13 +719,13 @@ namespace Shadowsocks.Controller
             }
         }
 
-        public override void Shutdown()
+        public override void Shutdown(bool forced = false)
         {
-            InvokeHandler handler = () => Close();
+            InvokeHandler handler = () => Close(forced);
             handler.BeginInvoke(null, null);
         }
 
-        public void Close()
+        public void Close(bool forced = false)
         {
             lock (this)
             {
@@ -734,6 +734,7 @@ namespace Shadowsocks.Controller
                     return;
                 }
                 closed = true;
+                //Logging.Log(LogLevel.Debug, String.Format("-------{0}:{1}", cfg.targetHost, cfg.targetPort));
             }
             Thread.Sleep(200);
             CloseSocket(ref remote);
@@ -765,7 +766,7 @@ namespace Shadowsocks.Controller
             ResetTimeout(0);
             try
             {
-                bool reconnect = TryReconnect();
+                bool reconnect = forced ? false : TryReconnect();
                 //lock (this)
                 {
                     if (this.State != ConnectState.END)
@@ -875,8 +876,10 @@ namespace Shadowsocks.Controller
             Logging.Info($"Connect {cfg.targetHost}:{cfg.targetPort.ToString()} via {server.server}:{server.server_port}");
 
             ResetTimeout(cfg.TTL);
-            if (cfg.targetHost != null)
+            if (cfg.fouce_local_dns_query && cfg.targetHost != null)
             {
+                Logging.Log(LogLevel.Warn, "enter fouce_local_dns_query branch!!!");
+
                 IPAddress ipAddress;
 
                 string host = cfg.targetHost;
@@ -1112,7 +1115,8 @@ namespace Shadowsocks.Controller
                 int bytesRead = remote.EndReceive(ar, out sendback);
 
                 int bytesRecv = remote.GetAsyncResultSize(ar);
-                server.ServerSpeedLog().AddDownloadBytes(bytesRecv, DateTime.Now, speedTester.AddDownloadSize(bytesRecv));
+                speedTester.AddDownloadSize(bytesRecv);
+                server.ServerSpeedLog().AddDownloadBytes(bytesRecv, DateTime.Now);
 
                 if (sendback)
                 {
@@ -1475,7 +1479,8 @@ namespace Shadowsocks.Controller
                         if (pingTime >= 0)
                             server.ServerSpeedLog().AddConnectTime(pingTime);
                     }
-                    server.ServerSpeedLog().AddDownloadBytes(bytesRecv, now, speedTester.AddDownloadSize(bytesRecv));
+                    speedTester.AddDownloadSize(bytesRecv);
+                    server.ServerSpeedLog().AddDownloadBytes(bytesRecv, now);
                     ResetTimeout(cfg.TTL);
                     if (sendback)
                     {
@@ -1565,7 +1570,8 @@ namespace Shadowsocks.Controller
                         if (pingTime >= 0)
                             server.ServerSpeedLog().AddConnectTime(pingTime);
                     }
-                    server.ServerSpeedLog().AddDownloadBytes(bytesRecv, DateTime.Now, speedTester.AddDownloadSize(bytesRecv));
+                    speedTester.AddDownloadSize(bytesRecv);
+                    server.ServerSpeedLog().AddDownloadBytes(bytesRecv, DateTime.Now);
                     ResetTimeout(cfg.TTL);
 
                     if (bytesRead <= 0)
@@ -1602,7 +1608,8 @@ namespace Shadowsocks.Controller
             send_len = remote.Send(bytes, length, SocketFlags.None);
             if (send_len > 0)
             {
-                server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now, speedTester.AddUploadSize(send_len));
+                speedTester.AddUploadSize(send_len);
+                server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now);
                 if (length >= 0)
                     ResetTimeout(cfg.TTL);
                 else
@@ -1623,7 +1630,8 @@ namespace Shadowsocks.Controller
                     send_len = remote.Send(null, 0, SocketFlags.None);
                     if (send_len > 0)
                     {
-                        server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now, speedTester.AddUploadSize(send_len));
+                        speedTester.AddUploadSize(send_len);
+                        server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now);
                         total_len += send_len;
                     }
                     else
@@ -1637,7 +1645,8 @@ namespace Shadowsocks.Controller
         {
             int send_len;
             send_len = remoteUDP.BeginSendTo(bytes, length, SocketFlags.None, new AsyncCallback(PipeRemoteUDPSendCallback), null);
-            server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now, speedTester.AddUploadSize(send_len));
+            speedTester.AddUploadSize(send_len);
+            server.ServerSpeedLog().AddUploadBytes(send_len, DateTime.Now);
         }
 
         private void PipeConnectionReceiveCallback(IAsyncResult ar)

@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using System.Threading;
 using Shadowsocks.Encryption;
 using Newtonsoft.Json;
+using System.Runtime.InteropServices;
+using Shadowsocks.Util;
 
 namespace Shadowsocks.Model
 {
@@ -53,6 +55,18 @@ namespace Shadowsocks.Model
         public string server_addr;
         public int server_port;
         public string remarks;
+
+        public PortMapConfig Clone()
+        {
+            PortMapConfig pmc = new PortMapConfig();
+            pmc.enable = enable;
+            pmc.type = type;
+            pmc.id = id;
+            pmc.server_addr = server_addr;
+            pmc.server_port = server_port;
+            pmc.remarks = remarks;
+            return pmc;
+        }
     }
 
     public class PortMapConfigCache
@@ -67,17 +81,69 @@ namespace Shadowsocks.Model
     [Serializable]
     public class ServerSubscribe
     {
-        public static string DEFAULT_FEED_URL = "https://raw.githubusercontent.com/AmazingDM/sub/master/ssrshare.com";
-        //private static string OLD_DEFAULT_FEED_URL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenodeplain.txt";
-        //private static string OLD_OLD_DEFAULT_FEED_URL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenode.txt";
+        public static string DEFAULT_FEED_SUBSCRIBES_URL { get { return "https://raw.githubusercontent.com/githubzgr/subscribes/master/subscribes_base64"; } } 
+        public static string DEFAULT_FEED_URL { get{return "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenodeplain.txt"; } }
+        //private static string OLD_DEFAULT_FEED_URL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/free/freenode.txt";
 
-        public string URL = DEFAULT_FEED_URL;
-        public string Group;
-        public UInt64 LastUpdateTime;
+        public string id;
+        private string url;
+        public string Group = "";
+        public UInt64 LastUpdateTime = 0;
 
+        public bool JoinUpdate = true;
         public bool UseProxy = false;
-    }
+        public bool DontUseProxy = false;
 
+        private string host = "";
+        public bool groupUserDefine = false;
+        public int index = -1;
+
+        public ServerSubscribe()
+        {
+            URL = "";
+            if(String.IsNullOrEmpty(id))
+            {
+                byte[] id = new byte[16];
+                Util.Utils.RandBytes(id, id.Length);
+                this.id = BitConverter.ToString(id).Replace("-", "");
+            }
+        }
+        public string URL
+        {
+            get { return this.url; }
+            set
+            {
+                this.url = value == "" ? DEFAULT_FEED_URL : value;
+                host = Utils.GetHostFromUrl(this.url);
+            }
+        }
+        //public string ID
+        //{
+        //    get { return this.id; }
+        //}
+
+        public string Host
+        {
+            get { return this.host; }
+        }
+
+        public ServerSubscribe Clone()
+        {
+            ServerSubscribe ss = new ServerSubscribe();
+            ss.URL = URL;
+            ss.Group = Group;
+            ss.LastUpdateTime = LastUpdateTime;
+            ss.JoinUpdate = JoinUpdate;
+            ss.UseProxy = UseProxy;
+            ss.DontUseProxy = DontUseProxy;
+
+            ss.id = id;
+            ss.host = host;
+            ss.groupUserDefine = groupUserDefine;
+            return ss;
+        }
+    }
+    
     public class GlobalConfiguration
     {
         public static string config_password = "";
@@ -107,9 +173,9 @@ namespace Shadowsocks.Model
     [Serializable]
     public class Configuration
     {
-        public List<Server> configs;
+        public List<Server> Servers;
         public int index;
-        public bool random;
+        public bool enableBalance;
         public int sysProxyMode;
         public bool shareOverLan;
         public int localPort;
@@ -138,19 +204,26 @@ namespace Shadowsocks.Model
         public string authPass;
 
         public bool autoBan;
+        public bool enableLogging;
         public bool sameHostForSameTarget;
 
-        public int keepVisitTime;
+        private int keepVisitTime;
 
         public bool isHideTips;
         public bool IsServerLogFormTopmost;
         public APoint ServerLogFormLocation;
 
+        public List<ServerSubscribe> serverSubscribes;
         public bool nodeFeedAutoUpdate;
+        public int nodeFeedAutoUpdateInterval;
         public bool nodeFeedAutoLatency;
+        public int nodeFeedAutoLatencyInterval;
         public bool nodeFeedAutoUpdateUseProxy;
         public bool nodeFeedAutoUpdateTryUseProxy;
-        public List<ServerSubscribe> serverSubscribes;
+        public bool sortServersBySubscriptionsOrder;
+
+        public UInt64 LastnodeFeedAutoLatency;
+        public UInt64 LastUpdateSubscribesTime;
 
         public Dictionary<string, string> token = new Dictionary<string, string>();
         public Dictionary<string, PortMapConfig> portMap = new Dictionary<string, PortMapConfig>();
@@ -162,6 +235,7 @@ namespace Shadowsocks.Model
         private LRUCache<string, UriVisitTime> uricache = new LRUCache<string, UriVisitTime>(180);
 
         private static string CONFIG_FILE = "gui-config.json";
+        private static string CONFIG_FILE_BACKUP = "gui-config.json.backup";
 
 
         public static void SetPassword(string password)
@@ -190,15 +264,15 @@ namespace Shadowsocks.Model
                     {
                         UriVisitTime visit = uricache.Get(targetAddr);
                         int index = -1;
-                        for (int i = 0; i < configs.Count; ++i)
+                        for (int i = 0; i < Servers.Count; ++i)
                         {
-                            if (configs[i].id == id)
+                            if (Servers[i].id == id)
                             {
                                 index = i;
                                 break;
                             }
                         }
-                        if (index >= 0 && visit.index == index && configs[index].enable)
+                        if (index >= 0 && visit.index == index && Servers[index].enable)
                         {
                             uricache.Del(targetAddr);
                             return true;
@@ -222,10 +296,10 @@ namespace Shadowsocks.Model
                 if (sameHostForSameTarget && !forceRandom && targetAddr != null && uricache.ContainsKey(targetAddr))
                 {
                     UriVisitTime visit = uricache.Get(targetAddr);
-                    if (visit.index < configs.Count && configs[visit.index].enable && configs[visit.index].ServerSpeedLog().ErrorContinurousTimes == 0)
+                    if (visit.index < Servers.Count && Servers[visit.index].enable && Servers[visit.index].ServerSpeedLog().ErrorContinurousTimes == 0)
                     {
                         uricache.Del(targetAddr);
-                        return configs[visit.index];
+                        return Servers[visit.index];
                     }
                 }
                 if (forceRandom)
@@ -233,7 +307,7 @@ namespace Shadowsocks.Model
                     int index;
                     if (filter == null && randomInGroup)
                     {
-                        index = serverStrategy.Select(configs, this.index, balanceAlgorithm, delegate (Server server, Server selServer)
+                        index = serverStrategy.Select(Servers, this.index, balanceAlgorithm, delegate (Server server, Server selServer)
                         {
                             if (selServer != null)
                                 return selServer.group == server.group;
@@ -242,17 +316,17 @@ namespace Shadowsocks.Model
                     }
                     else
                     {
-                        index = serverStrategy.Select(configs, this.index, balanceAlgorithm, filter, true);
+                        index = serverStrategy.Select(Servers, this.index, balanceAlgorithm, filter, true);
                     }
                     if (index == -1) return GetErrorServer();
-                    return configs[index];
+                    return Servers[index];
                 }
                 else if (usingRandom && cfgRandom)
                 {
                     int index;
                     if (filter == null && randomInGroup)
                     {
-                        index = serverStrategy.Select(configs, this.index, balanceAlgorithm, delegate (Server server, Server selServer)
+                        index = serverStrategy.Select(Servers, this.index, balanceAlgorithm, delegate (Server server, Server selServer)
                         {
                             if (selServer != null)
                                 return selServer.group == server.group;
@@ -261,7 +335,7 @@ namespace Shadowsocks.Model
                     }
                     else
                     {
-                        index = serverStrategy.Select(configs, this.index, balanceAlgorithm, filter);
+                        index = serverStrategy.Select(Servers, this.index, balanceAlgorithm, filter);
                     }
                     if (index == -1) return GetErrorServer();
                     if (targetAddr != null)
@@ -272,24 +346,24 @@ namespace Shadowsocks.Model
                         visit.visitTime = DateTime.Now;
                         uricache.Set(targetAddr, visit);
                     }
-                    return configs[index];
+                    return Servers[index];
                 }
                 else
                 {
-                    if (index >= 0 && index < configs.Count)
+                    if (index >= 0 && index < Servers.Count)
                     {
                         int selIndex = index;
                         if (usingRandom)
                         {
-                            for (int i = 0; i < configs.Count; ++i)
+                            for (int i = 0; i < Servers.Count; ++i)
                             {
-                                if (configs[selIndex].isEnable())
+                                if (Servers[selIndex].enable)
                                 {
                                     break;
                                 }
                                 else
                                 {
-                                    selIndex = (selIndex + 1) % configs.Count;
+                                    selIndex = (selIndex + 1) % Servers.Count;
                                 }
                             }
                         }
@@ -302,7 +376,7 @@ namespace Shadowsocks.Model
                             visit.visitTime = DateTime.Now;
                             uricache.Set(targetAddr, visit);
                         }
-                        return configs[selIndex];
+                        return Servers[selIndex];
                     }
                     else
                     {
@@ -317,7 +391,7 @@ namespace Shadowsocks.Model
             portMapCache = new Dictionary<int, PortMapConfigCache>();
             Dictionary<string, Server> id2server = new Dictionary<string, Server>();
             Dictionary<string, int> server_group = new Dictionary<string, int>();
-            foreach (Server s in configs)
+            foreach (Server s in Servers)
             {
                 id2server[s.id] = s;
                 if (!string.IsNullOrEmpty(s.group))
@@ -379,8 +453,8 @@ namespace Shadowsocks.Model
         public static void CheckServer(Server server)
         {
             CheckPort(server.server_port);
-            if (server.server_udp_port != 0)
-                CheckPort(server.server_udp_port);
+            //if (server.server_udp_port != 0)
+            CheckPort(server.server_udp_port);
             try
             {
                 CheckPassword(server.password);
@@ -405,22 +479,26 @@ namespace Shadowsocks.Model
             localDnsServer = "";
 
             balanceAlgorithm = "LowException";
-            random = true;
-            sysProxyMode = (int)ProxyMode.Pac;
-            proxyRuleMode = (int)ProxyRuleMode.BypassLanAndChina;
+            enableBalance = false;
+            autoBan = false;
+            enableLogging = true;
+            sysProxyMode = (int)ProxyMode.NoModify;
+            proxyRuleMode = (int)ProxyRuleMode.Disable;
             IsServerLogFormTopmost = false;
             ServerLogFormLocation = new APoint();
 
+            serverSubscribes = new List<ServerSubscribe>();
             nodeFeedAutoUpdate = true;
+            nodeFeedAutoUpdateInterval = 3;
             nodeFeedAutoLatency = false;
+            nodeFeedAutoLatencyInterval = 30;
             nodeFeedAutoUpdateUseProxy = false;
             nodeFeedAutoUpdateTryUseProxy = false;
+            sortServersBySubscriptionsOrder = true;
+            LastnodeFeedAutoLatency = 0;
+            LastUpdateSubscribesTime = 0;
 
-            serverSubscribes = new List<ServerSubscribe>()
-            {
-            };
-
-            configs = new List<Server>()
+            Servers = new List<Server>()
             {
                 GetDefaultServer()
             };
@@ -430,9 +508,15 @@ namespace Shadowsocks.Model
 
         public void CopyFrom(Configuration config)
         {
-            configs = config.configs;
+            //Servers.Clear();
+            //foreach(Server s in config.Servers)
+            //{
+            //    Servers.Add(s.Clone());
+            //    //Servers[Servers.Count - 1].CopyFrom(s);
+            //}
+            Servers = config.Servers;
             index = config.index;
-            random = config.random;
+            enableBalance = config.enableBalance;
             sysProxyMode = config.sysProxyMode;
             shareOverLan = config.shareOverLan;
             localPort = config.localPort;
@@ -454,14 +538,34 @@ namespace Shadowsocks.Model
             authUser = config.authUser;
             authPass = config.authPass;
             autoBan = config.autoBan;
+            enableLogging = config.enableLogging;
             sameHostForSameTarget = config.sameHostForSameTarget;
             keepVisitTime = config.keepVisitTime;
             isHideTips = config.isHideTips;
             nodeFeedAutoUpdate = config.nodeFeedAutoUpdate;
+            nodeFeedAutoUpdateInterval = config.nodeFeedAutoUpdateInterval;
             nodeFeedAutoLatency = config.nodeFeedAutoLatency;
+            nodeFeedAutoLatencyInterval = config.nodeFeedAutoLatencyInterval;
             nodeFeedAutoUpdateUseProxy = config.nodeFeedAutoUpdateUseProxy;
             nodeFeedAutoUpdateTryUseProxy = config.nodeFeedAutoUpdateTryUseProxy;
+            sortServersBySubscriptionsOrder = config.sortServersBySubscriptionsOrder;
+            LastnodeFeedAutoLatency = config.LastnodeFeedAutoLatency;
+            LastUpdateSubscribesTime = config.LastUpdateSubscribesTime;
+            //serverSubscribeSetting = serverSubscribeSetting.Clone();
             serverSubscribes = config.serverSubscribes;
+            //serverSubscribes.Clear();
+            //foreach (ServerSubscribe ss in config.serverSubscribes)
+            //{
+            //    serverSubscribes.Add(ss.Clone());
+            //}
+        }
+        public string getMemory(object o) // 获取引用类型的内存地址方法    
+        {
+            GCHandle h = GCHandle.Alloc(o, GCHandleType.WeakTrackResurrection);
+
+            IntPtr addr = GCHandle.ToIntPtr(h);
+
+            return "0x" + addr.ToString("X");
         }
 
         public void FixConfiguration()
@@ -495,8 +599,8 @@ namespace Shadowsocks.Model
             }
 
             Dictionary<string, int> id = new Dictionary<string, int>();
-            if (index < 0 || index >= configs.Count) index = 0;
-            foreach (Server server in configs)
+            if (index < 0 || index >= Servers.Count) index = 0;
+            foreach (Server server in Servers)
             {
                 if (id.ContainsKey(server.id))
                 {
@@ -547,13 +651,13 @@ namespace Shadowsocks.Model
 
         public static void Save(Configuration config)
         {
-            if (config.index >= config.configs.Count)
+            if (config.index < 0 || config.index >= config.Servers.Count)
             {
-                config.index = config.configs.Count - 1;
-            }
-            if (config.index < 0)
-            {
-                config.index = 0;
+                int newindex = config.Servers.FindIndex(t => t.enable);
+                if (newindex != -1)
+                    config.index = newindex;
+                else
+                    config.index = 0;
             }
             try
             {
@@ -582,6 +686,20 @@ namespace Shadowsocks.Model
                 {
                     sw.Write(jsonString);
                     sw.Flush();
+                }
+
+                if (File.Exists(CONFIG_FILE_BACKUP))
+                {
+                    DateTime dt = File.GetLastWriteTimeUtc(CONFIG_FILE_BACKUP);
+                    DateTime now = DateTime.Now;
+                    if ((now - dt).TotalHours > 4)
+                    {
+                        File.Copy(CONFIG_FILE, CONFIG_FILE_BACKUP, true);
+                    }
+                }
+                else
+                {
+                    File.Copy(CONFIG_FILE, CONFIG_FILE_BACKUP, true);
                 }
             }
             catch (IOException e)
@@ -638,27 +756,37 @@ namespace Shadowsocks.Model
 
         public bool isDefaultConfig()
         {
-            if (configs.Count == 1 && configs[0].server == Configuration.GetDefaultServer().server)
+            if (Servers.Count == 1 && Servers[0].server == Configuration.GetDefaultServer().server)
                 return true;
             return false;
         }
 
-        public static Server CopyServer(Server server)
+        //public static Server CopyServer(Server server)
+        //{
+        //    Server s = new Server();
+        //    s.server = server.server;
+        //    s.server_port = server.server_port;
+        //    s.method = server.method;
+        //    s.protocol = server.protocol;
+        //    s.protocolparam = server.protocolparam ?? "";
+        //    s.obfs = server.obfs;
+        //    s.obfsparam = server.obfsparam ?? "";
+        //    s.password = server.password;
+        //    s.remarks = server.remarks;
+        //    s.group = server.group;
+        //    s.udp_over_tcp = server.udp_over_tcp;
+        //    s.server_udp_port = server.server_udp_port;
+        //    return s;
+        //}
+
+        public static ServerSubscribe CopySubscribes(ServerSubscribe sss)
         {
-            Server s = new Server();
-            s.server = server.server;
-            s.server_port = server.server_port;
-            s.method = server.method;
-            s.protocol = server.protocol;
-            s.protocolparam = server.protocolparam ?? "";
-            s.obfs = server.obfs;
-            s.obfsparam = server.obfsparam ?? "";
-            s.password = server.password;
-            s.remarks = server.remarks;
-            s.group = server.group;
-            s.udp_over_tcp = server.udp_over_tcp;
-            s.server_udp_port = server.server_udp_port;
-            return s;
+            ServerSubscribe ss = new ServerSubscribe();
+            ss.URL = sss.URL;
+            ss.Group = sss.Group;
+            ss.LastUpdateTime = sss.LastUpdateTime;
+            ss.UseProxy = sss.UseProxy;
+            return ss;
         }
 
         public static Server GetErrorServer()
@@ -670,7 +798,7 @@ namespace Shadowsocks.Model
 
         public static void CheckPort(int port)
         {
-            if (port <= 0 || port > 65535)
+            if (port < 0 || port > 65535)
             {
                 throw new ConfigurationException(I18N.GetString("Port out of range"));
             }
@@ -705,28 +833,46 @@ namespace Shadowsocks.Model
                 return base.DeserializeObject(value, type);
             }
         }
+
+        //public int GetNodeFeedAutoUpdateInterval()
+        //{
+        //    return 
+        //    switch (nodeFeedAutoUpdateIntervalIndex)
+        //    {
+        //        case 0:
+        //            return 1;
+        //        case 1:
+        //            return 3;
+        //    }
+        //}
+
+        //public int GetNodeFeedAutoLatencyInterval()
+        //{
+
+        //}
     }
 
     [Serializable]
     public class ServerTrans
     {
+        public long latency;
         public long totalUploadBytes;
         public long totalDownloadBytes;
 
-        void AddUpload(long bytes)
-        {
-            //lock (this)
-            {
-                totalUploadBytes += bytes;
-            }
-        }
-        void AddDownload(long bytes)
-        {
-            //lock (this)
-            {
-                totalDownloadBytes += bytes;
-            }
-        }
+        //void AddUpload(long bytes)
+        //{
+        //    //lock (this)
+        //    {
+        //        totalUploadBytes += bytes;
+        //    }
+        //}
+        //void AddDownload(long bytes)
+        //{
+        //    //lock (this)
+        //    {
+        //        totalDownloadBytes += bytes;
+        //    }
+        //}
     }
 
     [Serializable]
@@ -820,7 +966,28 @@ namespace Shadowsocks.Model
             }
         }
 
-        public void AddUpload(string server, Int64 size)
+        public void SetLatency(string server, Int64 size)
+        {
+            lock (servers)
+            {
+                if (!servers.ContainsKey(server))
+                    servers.Add(server, new ServerTrans());
+                ((ServerTrans)servers[server]).latency = size;
+            }
+            if (--saveCounter <= 0)
+            {
+                saveCounter = 256;
+                if ((DateTime.Now - saveTime).TotalMinutes > 10)
+                {
+                    lock (servers)
+                    {
+                        Save(this);
+                        saveTime = DateTime.Now;
+                    }
+                }
+            }
+        }
+        public void AddtotalUpload(string server, Int64 size)
         {
             lock (servers)
             {
@@ -841,7 +1008,7 @@ namespace Shadowsocks.Model
                 }
             }
         }
-        public void AddDownload(string server, Int64 size)
+        public void AddtotalDownload(string server, Int64 size)
         {
             lock (servers)
             {

@@ -175,7 +175,7 @@ namespace Shadowsocks.Model
                 List<ServerIndex> serverList = new List<ServerIndex>();
                 for (int i = 0; i < configs.Count; ++i)
                 {
-                    if (configs[i].isEnable())
+                    if (configs[i].enable)
                     {
                         if (filter != null)
                         {
@@ -208,7 +208,7 @@ namespace Shadowsocks.Model
                 if (serverList.Count == 0)
                 {
                     int i = lastSelectIndex;
-                    if (i >= 0 && i < configs.Count && configs[i].isEnable())
+                    if (i >= 0 && i < configs.Count && configs[i].enable)
                         serverList.Add(new ServerIndex(i, configs[i]));
                 }
                 int serverListIndex = -1;
@@ -244,7 +244,7 @@ namespace Shadowsocks.Model
                             }
                             else
                             {
-                                if (configs.Count > lastSelectIndex && lastSelectIndex >= 0 && configs[lastSelectIndex].isEnable() && !forceChange)
+                                if (configs.Count > lastSelectIndex && lastSelectIndex >= 0 && configs[lastSelectIndex].enable && !forceChange)
                                 {
                                     return lastSelectIndex;
                                 }
@@ -321,7 +321,7 @@ namespace Shadowsocks.Model
                         }
                         if (algorithm == "SelectedFirst"
                             && randomGennarator.Next(3) == 0
-                            && configs[curIndex].isEnable())
+                            && configs[curIndex].enable)
                         {
                             for (int i = 0; i < serverList.Count; ++i)
                             {

@@ -14,8 +14,7 @@ namespace Shadowsocks.View
     public partial class SettingsForm : Form
     {
         private ShadowsocksController controller;
-        // this is a copy of configuration that we are working on
-        private Configuration _modifiedConfiguration;
+        private Settings settings;
         private Dictionary<int, string> _balanceIndexMap = new Dictionary<int, string>();
 
         public SettingsForm(ShadowsocksController controller)
@@ -30,33 +29,6 @@ namespace Shadowsocks.View
             controller.ConfigChanged += controller_ConfigChanged;
 
             int dpi_mul = Util.Utils.GetDpiMul();
-            //int font_height = 9;
-            //Font new_font = new Font("Arial", (float)(9.0 * dpi_mul / 4));
-            //this.Font = new_font;
-
-            //comboProxyType.Height = comboProxyType.Height - font_height + font_height * dpi_mul / 4;
-            comboProxyType.Width = comboProxyType.Width * dpi_mul / 4;
-            //RandomComboBox.Height = RandomComboBox.Height - font_height + font_height * dpi_mul / 4;
-            RandomComboBox.Width = RandomComboBox.Width * dpi_mul / 4;
-
-            TextS5Server.Width = TextS5Server.Width * dpi_mul / 4;
-            NumS5Port.Width = NumS5Port.Width * dpi_mul / 4;
-            TextS5User.Width = TextS5User.Width * dpi_mul / 4;
-            TextS5Pass.Width = TextS5Pass.Width * dpi_mul / 4;
-            TextUserAgent.Width = TextUserAgent.Width * dpi_mul / 4;
-
-            NumProxyPort.Width = NumProxyPort.Width * dpi_mul / 4;
-            TextAuthUser.Width = TextAuthUser.Width * dpi_mul / 4;
-            TextAuthPass.Width = TextAuthPass.Width * dpi_mul / 4;
-
-            buttonDefault.Height = buttonDefault.Height * dpi_mul / 4;
-            buttonDefault.Width = buttonDefault.Width * dpi_mul / 4;
-            DNSText.Width = DNSText.Width * dpi_mul / 4;
-            LocalDNSText.Width = LocalDNSText.Width * dpi_mul / 4;
-            NumReconnect.Width = NumReconnect.Width * dpi_mul / 4;
-            NumTimeout.Width = NumTimeout.Width * dpi_mul / 4;
-            NumTTL.Width = NumTTL.Width * dpi_mul / 4;
-
             LoadCurrentConfiguration();
         }
 
@@ -68,52 +40,68 @@ namespace Shadowsocks.View
         private void UpdateTexts()
         {
             this.Text = I18N.GetString("Global Settings") + "("
-                + (controller.GetCurrentConfiguration().shareOverLan ? "any" : "local") + ":" + controller.GetCurrentConfiguration().localPort.ToString()
-                + I18N.GetString(" Version") + UpdateChecker.FullVersion
+                + (controller.GetCurrentConfiguration().shareOverLan ? I18N.GetString("Any") : I18N.GetString("Local")) + ":" + controller.GetCurrentConfiguration().localPort.ToString()
+                + I18N.GetString(" Version") + ":" + UpdateChecker.FullVersion
                 + ")";
 
-            ListenGroup.Text = I18N.GetString(ListenGroup.Text);
-            checkShareOverLan.Text = I18N.GetString(checkShareOverLan.Text);
-            ProxyPortLabel.Text = I18N.GetString("Proxy Port");
-            ReconnectLabel.Text = I18N.GetString("Reconnect Times");
-            TTLLabel.Text = I18N.GetString("TTL");
-            labelTimeout.Text = I18N.GetString(labelTimeout.Text);
+            gbxListen.Text = I18N.GetString(gbxListen.Text);
+            chkShareOverLan.Text = I18N.GetString(chkShareOverLan.Text);
+            lblProxyPort.Text = I18N.GetString(lblProxyPort.Text);// "Proxy Port");
+            btnSetDefault.Text = I18N.GetString(btnSetDefault.Text);// "Set Default");
+            lblLocalDns.Text = I18N.GetString(lblLocalDns.Text);// "Local Dns");
+            lblReconnect.Text = I18N.GetString(lblReconnect.Text);// "Reconnect Times");
+            lblTtl.Text = I18N.GetString(lblTtl.Text);// "TTL");
+            lblTimeout.Text = I18N.GetString(lblTimeout.Text);
 
-            checkAutoStartup.Text = I18N.GetString(checkAutoStartup.Text);
-            checkRandom.Text = I18N.GetString(checkRandom.Text);
-            CheckAutoBan.Text = I18N.GetString("AutoBan");
+            chkAutoStartup.Text = I18N.GetString(chkAutoStartup.Text);
+            chkBalance.Text = I18N.GetString(chkBalance.Text);
+            chkAutoBan.Text = I18N.GetString(chkAutoBan.Text);// "AutoBan");
+            chkLoggingEnable.Text = I18N.GetString(chkLoggingEnable.Text);
 
-            Socks5ProxyGroup.Text = I18N.GetString(Socks5ProxyGroup.Text);
-            checkBoxPacProxy.Text = I18N.GetString(checkBoxPacProxy.Text);
-            CheckSockProxy.Text = I18N.GetString("Proxy On");
-            LabelS5Server.Text = I18N.GetString("Server IP");
-            LabelS5Port.Text = I18N.GetString("Server Port");
-            LabelS5Server.Text = I18N.GetString("Server IP");
-            LabelS5Port.Text = I18N.GetString("Server Port");
-            LabelS5Username.Text = I18N.GetString("Username");
-            LabelS5Password.Text = I18N.GetString("Password");
-            LabelAuthUser.Text = I18N.GetString("Username");
-            LabelAuthPass.Text = I18N.GetString("Password");
+            gbxSocks5Proxy.Text = I18N.GetString(gbxSocks5Proxy.Text);
+            chkPacProxy.Text = I18N.GetString(chkPacProxy.Text);
+            chkSockProxy.Text = I18N.GetString(chkSockProxy.Text);// "Proxy On");
+            lblS5Server.Text = I18N.GetString(lblS5Server.Text);// "Server IP");
+            lblS5Port.Text = I18N.GetString(lblS5Port.Text);// "Server Port");
+            //lblS5Server.Text = I18N.GetString("Server IP");
+            //lblS5Port.Text = I18N.GetString("Server Port");
+            lblS5Username.Text = I18N.GetString(lblS5Username.Text);// "Username");
+            lblS5Password.Text = I18N.GetString(lblS5Password.Text);// "Password");
+            lblUserAgent.Text = I18N.GetString(lblUserAgent.Text);// "User Agent");
+            lblAuthUser.Text = I18N.GetString(lblAuthUser.Text);// "Username");
+            lblAuthPass.Text = I18N.GetString(lblAuthPass.Text);// "Password");
 
-            LabelRandom.Text = I18N.GetString("Balance");
-            for (int i = 0; i < comboProxyType.Items.Count; ++i)
+            lblBalance.Text = I18N.GetString(lblBalance.Text);// "Enable balance");
+            for (int i = 0; i < cmbProxyType.Items.Count; ++i)
             {
-                comboProxyType.Items[i] = I18N.GetString(comboProxyType.Items[i].ToString());
+                cmbProxyType.Items[i] = I18N.GetString(cmbProxyType.Items[i].ToString());
             }
-            checkBalanceInGroup.Text = I18N.GetString("Balance in group");
-            for (int i = 0; i < RandomComboBox.Items.Count; ++i)
+            chkBalanceInGroup.Text = I18N.GetString(chkBalanceInGroup.Text);//"Balance in group");
+            for (int i = 0; i < cmbBalance.Items.Count; ++i)
             {
-                _balanceIndexMap[i] = RandomComboBox.Items[i].ToString();
-                RandomComboBox.Items[i] = I18N.GetString(RandomComboBox.Items[i].ToString());
+                _balanceIndexMap[i] = cmbBalance.Items[i].ToString();
+                cmbBalance.Items[i] = I18N.GetString(cmbBalance.Items[i].ToString());
             }
 
-            OKButton.Text = I18N.GetString("OK");
-            MyCancelButton.Text = I18N.GetString("Cancel");
+            btnOK.Text = I18N.GetString(btnOK.Text);
+            btnClose.Text = I18N.GetString(btnClose.Text);
+            btnApply.Text = I18N.GetString(btnApply.Text);
         }
 
+        private delegate void delegateConfigChanged(Object obj, EventArgs e);
         private void controller_ConfigChanged(object sender, EventArgs e)
         {
-            LoadCurrentConfiguration();
+            List<string> list = (List<string>)((object[])sender)[0];
+            if (list.Contains("All") || list.Contains(this.Name))
+            {
+                if (this.InvokeRequired)
+                {
+                    delegateConfigChanged adelegateConfigChanged = new delegateConfigChanged(controller_ConfigChanged);
+                    this.Invoke(adelegateConfigChanged, new object[] { sender, e });
+                    return;
+                }
+                LoadCurrentConfiguration();
+            }
         }
 
         private void ShowWindow()
@@ -126,36 +114,37 @@ namespace Shadowsocks.View
         {
             try
             {
-                int localPort = int.Parse(NumProxyPort.Text);
+                int localPort = int.Parse(nudProxyPort.Text);
                 Configuration.CheckPort(localPort);
                 int ret = 0;
-                _modifiedConfiguration.shareOverLan = checkShareOverLan.Checked;
-                _modifiedConfiguration.localPort = localPort;
-                _modifiedConfiguration.reconnectTimes = NumReconnect.Text.Length == 0 ? 0 : int.Parse(NumReconnect.Text);
+                settings.shareOverLan = chkShareOverLan.Checked;
+                settings.localPort = localPort;
+                settings.reconnectTimes = nudReconnect.Text.Length == 0 ? 0 : int.Parse(nudReconnect.Text);
 
-                if (checkAutoStartup.Checked != AutoStartup.Check() && !AutoStartup.Set(checkAutoStartup.Checked))
+                if (chkAutoStartup.Checked != AutoStartup.Check() && !AutoStartup.Set(chkAutoStartup.Checked))
                 {
                     MessageBox.Show(I18N.GetString("Failed to update registry"));
                 }
-                _modifiedConfiguration.random = checkRandom.Checked;
-                _modifiedConfiguration.balanceAlgorithm = RandomComboBox.SelectedIndex >= 0 && RandomComboBox.SelectedIndex < _balanceIndexMap.Count ? _balanceIndexMap[RandomComboBox.SelectedIndex] : "OneByOne";
-                _modifiedConfiguration.randomInGroup = checkBalanceInGroup.Checked;
-                _modifiedConfiguration.TTL = Convert.ToInt32(NumTTL.Value);
-                _modifiedConfiguration.connectTimeout = Convert.ToInt32(NumTimeout.Value);
-                _modifiedConfiguration.dnsServer = DNSText.Text;
-                _modifiedConfiguration.localDnsServer = LocalDNSText.Text;
-                _modifiedConfiguration.proxyEnable = CheckSockProxy.Checked;
-                _modifiedConfiguration.pacDirectGoProxy = checkBoxPacProxy.Checked;
-                _modifiedConfiguration.proxyType = comboProxyType.SelectedIndex;
-                _modifiedConfiguration.proxyHost = TextS5Server.Text;
-                _modifiedConfiguration.proxyPort = Convert.ToInt32(NumS5Port.Value);
-                _modifiedConfiguration.proxyAuthUser = TextS5User.Text;
-                _modifiedConfiguration.proxyAuthPass = TextS5Pass.Text;
-                _modifiedConfiguration.proxyUserAgent = TextUserAgent.Text;
-                _modifiedConfiguration.authUser = TextAuthUser.Text;
-                _modifiedConfiguration.authPass = TextAuthPass.Text;
+                settings.enableBalance = chkBalance.Checked;
+                settings.balanceAlgorithm = cmbBalance.SelectedIndex >= 0 && cmbBalance.SelectedIndex < _balanceIndexMap.Count ? _balanceIndexMap[cmbBalance.SelectedIndex] : "OneByOne";
+                settings.randomInGroup = chkBalanceInGroup.Checked;
+                settings.TTL = Convert.ToInt32(nudTTL.Value);
+                settings.connectTimeout = Convert.ToInt32(nudTimeout.Value);
+                settings.dnsServer = txtDNS.Text;
+                settings.localDnsServer = txtLocalDNS.Text;
+                settings.proxyEnable = chkSockProxy.Checked;
+                settings.pacDirectGoProxy = chkPacProxy.Checked;
+                settings.proxyType = cmbProxyType.SelectedIndex;
+                settings.proxyHost = txtS5Server.Text;
+                settings.proxyPort = Convert.ToInt32(nudS5Port.Value);
+                settings.proxyAuthUser = txtS5User.Text;
+                settings.proxyAuthPass = txtS5Pass.Text;
+                settings.proxyUserAgent = txtUserAgent.Text;
+                settings.authUser = txtAuthUser.Text;
+                settings.authPass = txtAuthPass.Text;
 
-                _modifiedConfiguration.autoBan = CheckAutoBan.Checked;
+                settings.autoBan = chkAutoBan.Checked;
+                settings.enableLogging = chkLoggingEnable.Checked;
 
                 return ret;
             }
@@ -168,76 +157,172 @@ namespace Shadowsocks.View
 
         private void LoadSelectedServer()
         {
-            checkShareOverLan.Checked = _modifiedConfiguration.shareOverLan;
-            NumProxyPort.Value = _modifiedConfiguration.localPort;
-            NumReconnect.Value = _modifiedConfiguration.reconnectTimes;
+            chkShareOverLan.Checked = settings.shareOverLan;
+            nudProxyPort.Value = settings.localPort;
+            nudReconnect.Value = settings.reconnectTimes;
 
-            checkAutoStartup.Checked = AutoStartup.Check();
-            checkRandom.Checked = _modifiedConfiguration.random;
+            chkAutoStartup.Checked = AutoStartup.Check();
+            chkBalance.Checked = settings.enableBalance;
             int selectedIndex = 0;
             for (int i = 0; i < _balanceIndexMap.Count; ++i)
             {
-                if (_modifiedConfiguration.balanceAlgorithm == _balanceIndexMap[i])
+                if (settings.balanceAlgorithm == _balanceIndexMap[i])
                 {
                     selectedIndex = i;
                     break;
                 }
             }
-            RandomComboBox.SelectedIndex = selectedIndex;
-            checkBalanceInGroup.Checked = _modifiedConfiguration.randomInGroup;
-            NumTTL.Value = _modifiedConfiguration.TTL;
-            NumTimeout.Value = _modifiedConfiguration.connectTimeout;
-            DNSText.Text = _modifiedConfiguration.dnsServer;
-            LocalDNSText.Text = _modifiedConfiguration.localDnsServer;
+            cmbBalance.SelectedIndex = selectedIndex;
+            chkBalanceInGroup.Checked = settings.randomInGroup;
+            nudTTL.Value = settings.TTL;
+            nudTimeout.Value = settings.connectTimeout;
+            txtDNS.Text = settings.dnsServer;
+            txtLocalDNS.Text = settings.localDnsServer;
 
-            CheckSockProxy.Checked = _modifiedConfiguration.proxyEnable;
-            checkBoxPacProxy.Checked = _modifiedConfiguration.pacDirectGoProxy;
-            comboProxyType.SelectedIndex = _modifiedConfiguration.proxyType;
-            TextS5Server.Text = _modifiedConfiguration.proxyHost;
-            NumS5Port.Value = _modifiedConfiguration.proxyPort;
-            TextS5User.Text = _modifiedConfiguration.proxyAuthUser;
-            TextS5Pass.Text = _modifiedConfiguration.proxyAuthPass;
-            TextUserAgent.Text = _modifiedConfiguration.proxyUserAgent;
-            TextAuthUser.Text = _modifiedConfiguration.authUser;
-            TextAuthPass.Text = _modifiedConfiguration.authPass;
+            chkSockProxy.Checked = settings.proxyEnable;
+            chkPacProxy.Checked = settings.pacDirectGoProxy;
+            cmbProxyType.SelectedIndex = settings.proxyType;
+            txtS5Server.Text = settings.proxyHost;
+            nudS5Port.Value = settings.proxyPort;
+            txtS5User.Text = settings.proxyAuthUser;
+            txtS5Pass.Text = settings.proxyAuthPass;
+            txtUserAgent.Text = settings.proxyUserAgent;
+            txtAuthUser.Text = settings.authUser;
+            txtAuthPass.Text = settings.authPass;
 
-            CheckAutoBan.Checked = _modifiedConfiguration.autoBan;
+            chkAutoBan.Checked = settings.autoBan;
+            chkLoggingEnable.Checked = settings.enableLogging;
         }
 
         private void LoadCurrentConfiguration()
         {
-            _modifiedConfiguration = controller.GetConfiguration();
+            settings = new Settings(controller.GetCurrentConfiguration());
             LoadSelectedServer();
         }
 
-        private void OKButton_Click(object sender, EventArgs e)
+        private void BtnOK_Click(object sender, EventArgs e)
         {
+            BtnApply_Click(null, null);
+            this.Close();
+        }
+
+        private void BtnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void BtnApply_Click(object sender, EventArgs e)
+        {
+            controller.ConfigChanged -= controller_ConfigChanged;
+            this.FormClosed -= new System.Windows.Forms.FormClosedEventHandler(this.SettingsForm_FormClosed);
+
+            Configuration config = controller.GetCurrentConfiguration();
             if (SaveOldSelectedServer() == -1)
             {
                 return;
             }
-            controller.SaveServersConfig(_modifiedConfiguration);
-            this.Close();
-        }
-
-        private void CancelButton_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void buttonDefault_Click(object sender, EventArgs e)
-        {
-            if (CheckSockProxy.Checked)
+            else
             {
-                NumReconnect.Value = 4;
-                NumTimeout.Value = 10;
-                NumTTL.Value = 60;
+                settings.SaveTo(config);
+            }
+            Configuration.Save(config);
+            controller.JustReload();
+        }
+
+        private void btnSetDefault_Click(object sender, EventArgs e)
+        {
+            if (chkSockProxy.Checked)
+            {
+                nudReconnect.Value = 4;
+                nudTimeout.Value = 10;
+                nudTTL.Value = 60;
             }
             else
             {
-                NumReconnect.Value = 4;
-                NumTimeout.Value = 5;
-                NumTTL.Value = 60;
+                nudReconnect.Value = 4;
+                nudTimeout.Value = 5;
+                nudTTL.Value = 60;
+            }
+        }
+
+        public class Settings
+        {
+            public bool enableBalance;
+            public bool shareOverLan;
+            public int localPort;
+
+            public string localDnsServer;
+            public string dnsServer;
+            public int reconnectTimes;
+            public string balanceAlgorithm;
+            public bool randomInGroup;
+            public int TTL;
+            public int connectTimeout;
+
+            public bool proxyEnable;
+            public bool pacDirectGoProxy;
+            public int proxyType;
+            public string proxyHost;
+            public int proxyPort;
+            public string proxyAuthUser;
+            public string proxyAuthPass;
+            public string proxyUserAgent;
+
+            public string authUser;
+            public string authPass;
+
+            public bool autoBan;
+            public bool enableLogging;
+
+            public Settings(Configuration config)
+            {
+                enableBalance = config.enableBalance;
+                shareOverLan = config.shareOverLan;
+                localPort = config.localPort;
+                localDnsServer = config.localDnsServer;
+                dnsServer = config.dnsServer;
+                reconnectTimes = config.reconnectTimes;
+                balanceAlgorithm = config.balanceAlgorithm;
+                randomInGroup = config.randomInGroup;
+                TTL = config.TTL;
+                connectTimeout = config.connectTimeout;
+                proxyEnable = config.proxyEnable;
+                pacDirectGoProxy = config.pacDirectGoProxy;
+                proxyType = config.proxyType;
+                proxyHost = config.proxyHost;
+                proxyPort = config.proxyPort;
+                proxyAuthUser = config.proxyAuthUser;
+                proxyAuthPass = config.proxyAuthPass;
+                proxyUserAgent = config.proxyUserAgent;
+                authUser = config.authUser;
+                authPass = config.authPass;
+                autoBan = config.autoBan;
+                enableLogging = config.enableLogging;
+            }
+            public void SaveTo(Configuration config)
+            {
+                config.enableBalance = enableBalance;
+                config.shareOverLan = shareOverLan;
+                config.localPort = localPort;
+                config.localDnsServer = localDnsServer;
+                config.dnsServer = dnsServer;
+                config.reconnectTimes = reconnectTimes;
+                config.balanceAlgorithm = balanceAlgorithm;
+                config.randomInGroup = randomInGroup;
+                config.TTL = TTL;
+                config.connectTimeout = connectTimeout;
+                config.proxyEnable = proxyEnable;
+                config.pacDirectGoProxy = pacDirectGoProxy;
+                config.proxyType = proxyType;
+                config.proxyHost = proxyHost;
+                config.proxyPort = proxyPort;
+                config.proxyAuthUser = proxyAuthUser;
+                config.proxyAuthPass = proxyAuthPass;
+                config.proxyUserAgent = proxyUserAgent;
+                config.authUser = authUser;
+                config.authPass = authPass;
+                config.autoBan = autoBan;
+                config.enableLogging = enableLogging;
             }
         }
     }

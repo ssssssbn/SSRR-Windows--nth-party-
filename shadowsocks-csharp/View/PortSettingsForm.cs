@@ -14,7 +14,9 @@ namespace Shadowsocks.View
     public partial class PortSettingsForm : Form
     {
         private ShadowsocksController controller;
-        private Configuration _modifiedConfiguration;
+        //private Configuration _modifiedConfiguration;
+        private Dictionary<string, PortMapConfig> portMap;
+        private List<Server> readonlyAllServers;
         private int _oldSelectedIndex = -1;
 
         public PortSettingsForm(ShadowsocksController controller)
@@ -50,15 +52,20 @@ namespace Shadowsocks.View
             checkEnable.Text = I18N.GetString("Enable");
             labelLocal.Text = I18N.GetString("Local Port");
             label1.Text = I18N.GetString("Remarks");
-            OKButton.Text = I18N.GetString("OK");
-            MyCancelButton.Text = I18N.GetString("Cancel");
-            Add.Text = I18N.GetString("&Add");
-            Del.Text = I18N.GetString("&Delete");
+            btnOK.Text = I18N.GetString(btnOK.Text);
+            btnClose.Text = I18N.GetString(btnClose.Text);
+            btnApply.Text = I18N.GetString(btnApply.Text);
+            btnAdd.Text = I18N.GetString("&Add");
+            btnDelete.Text = I18N.GetString("&Delete");
         }
 
         private void controller_ConfigChanged(object sender, EventArgs e)
         {
-            LoadCurrentConfiguration();
+            List<string> list = (List<string>)((object[])sender)[0];
+            if (list.Contains("All") || list.Contains(this.Name))
+            {
+                LoadCurrentConfiguration();
+            }
         }
 
         private void PortMapForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -68,29 +75,37 @@ namespace Shadowsocks.View
 
         private void LoadCurrentConfiguration()
         {
-            _modifiedConfiguration = controller.GetConfiguration();
-            LoadConfiguration(_modifiedConfiguration);
+            readonlyAllServers = controller.GetCurrentConfiguration().Servers;
+            portMap = new Dictionary<string, PortMapConfig>();
+            foreach (KeyValuePair<string, PortMapConfig> kvp in controller.GetCurrentConfiguration().portMap)
+                portMap.Add(kvp.Key, kvp.Value.Clone());
+            LoadPortSetting();
             LoadSelectedServer();
         }
 
-        private void OKButton_Click(object sender, EventArgs e)
+        private void BtnOK_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void BtnClose_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void BtnApply_Click(object sender, EventArgs e)
         {
             SaveSelectedServer();
-            controller.SaveServersPortMap(_modifiedConfiguration);
-            this.Close();
+            controller.SavePortConfig(portMap);
+
         }
 
-        private void CancelButton_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void LoadConfiguration(Configuration configuration)
+        private void LoadPortSetting()
         {
             comboServers.Items.Clear();
             comboServers.Items.Add("");
             Dictionary<string, int> server_group = new Dictionary<string, int>();
-            foreach (Server s in configuration.configs)
+            foreach (Server s in readonlyAllServers)
             {
                 if (!string.IsNullOrEmpty(s.group) && !server_group.ContainsKey(s.group))
                 {
@@ -98,14 +113,14 @@ namespace Shadowsocks.View
                     server_group[s.group] = 1;
                 }
             }
-            foreach (Server s in configuration.configs)
+            foreach (Server s in readonlyAllServers)
             {
                 comboServers.Items.Add(GetDisplayText(s));
             }
             listPorts.Items.Clear();
-            int[] list = new int[configuration.portMap.Count];
+            int[] list = new int[portMap.Count];
             int list_index = 0;
-            foreach (KeyValuePair<string, PortMapConfig> it in configuration.portMap)
+            foreach (KeyValuePair<string, PortMapConfig> it in portMap)
             {
                 try
                 {
@@ -121,7 +136,7 @@ namespace Shadowsocks.View
             for (int i = 0; i < list.Length; ++i)
             {
                 string remarks = "";
-                remarks = ((PortMapConfig)configuration.portMap[list[i].ToString()]).remarks ?? "";
+                remarks = ((PortMapConfig)portMap[list[i].ToString()]).remarks ?? "";
                 listPorts.Items.Add(list[i].ToString() + "    " + remarks);
             }
             _oldSelectedIndex = -1;
@@ -150,9 +165,9 @@ namespace Shadowsocks.View
                 string key = _oldSelectedIndex.ToString();
                 if (key != NumLocalPort.Text)
                 {
-                    if (_modifiedConfiguration.portMap.ContainsKey(key))
+                    if (portMap.ContainsKey(key))
                     {
-                        _modifiedConfiguration.portMap.Remove(key);
+                        portMap.Remove(key);
                     }
                     reflash_list = true;
                     key = NumLocalPort.Text;
@@ -165,11 +180,11 @@ namespace Shadowsocks.View
                         _oldSelectedIndex = 0;
                     }
                 }
-                if (!_modifiedConfiguration.portMap.ContainsKey(key))
+                if (!portMap.ContainsKey(key))
                 {
-                    _modifiedConfiguration.portMap[key] = new PortMapConfig();
+                    portMap[key] = new PortMapConfig();
                 }
-                PortMapConfig cfg = _modifiedConfiguration.portMap[key] as PortMapConfig;
+                PortMapConfig cfg = portMap[key] as PortMapConfig;
 
                 cfg.enable = checkEnable.Checked;
                 cfg.type = (PortMapType) comboBoxType.SelectedValue;
@@ -183,7 +198,7 @@ namespace Shadowsocks.View
                 cfg.server_port = Convert.ToInt32(NumTargetPort.Value);
                 if (reflash_list)
                 {
-                    LoadConfiguration(_modifiedConfiguration);
+                    LoadPortSetting();
                 }
             }
         }
@@ -192,16 +207,16 @@ namespace Shadowsocks.View
         {
             string key = ServerListText2Key((string)listPorts.SelectedItem);
             Dictionary<string, int> server_group = new Dictionary<string, int>();
-            foreach (Server s in _modifiedConfiguration.configs)
+            foreach (Server s in readonlyAllServers)
             {
                 if (!string.IsNullOrEmpty(s.group) && !server_group.ContainsKey(s.group))
                 {
                     server_group[s.group] = 1;
                 }
             }
-            if (key != null && _modifiedConfiguration.portMap.ContainsKey(key))
+            if (key != null && portMap.ContainsKey(key))
             {
-                PortMapConfig cfg = _modifiedConfiguration.portMap[key] as PortMapConfig;
+                PortMapConfig cfg = portMap[key] as PortMapConfig;
 
                 checkEnable.Checked = cfg.enable;
                 comboBoxType.SelectedValue = cfg.type;
@@ -243,7 +258,7 @@ namespace Shadowsocks.View
 
         private string GetIDText(string id)
         {
-            foreach (Server s in _modifiedConfiguration.configs)
+            foreach (Server s in readonlyAllServers)
             {
                 if (id == s.id)
                 {
@@ -259,15 +274,15 @@ namespace Shadowsocks.View
             LoadSelectedServer();
         }
 
-        private void Add_Click(object sender, EventArgs e)
+        private void btnAdd_Click(object sender, EventArgs e)
         {
             SaveSelectedServer();
             string key = "0";
-            if (!_modifiedConfiguration.portMap.ContainsKey(key))
+            if (!portMap.ContainsKey(key))
             {
-                _modifiedConfiguration.portMap[key] = new PortMapConfig();
+                portMap[key] = new PortMapConfig();
             }
-            PortMapConfig cfg = _modifiedConfiguration.portMap[key] as PortMapConfig;
+            PortMapConfig cfg = portMap[key] as PortMapConfig;
 
             cfg.enable = checkEnable.Checked;
             cfg.type = (PortMapType) comboBoxType.SelectedValue;
@@ -277,19 +292,19 @@ namespace Shadowsocks.View
             cfg.server_port = Convert.ToInt32(NumTargetPort.Value);
 
             _oldSelectedIndex = -1;
-            LoadConfiguration(_modifiedConfiguration);
+            LoadPortSetting();
             LoadSelectedServer();
         }
 
-        private void Del_Click(object sender, EventArgs e)
+        private void btnDelete_Click(object sender, EventArgs e)
         {
             string key = _oldSelectedIndex.ToString();
-            if (_modifiedConfiguration.portMap.ContainsKey(key))
+            if (portMap.ContainsKey(key))
             {
-                _modifiedConfiguration.portMap.Remove(key);
+                portMap.Remove(key);
             }
             _oldSelectedIndex = -1;
-            LoadConfiguration(_modifiedConfiguration);
+            LoadPortSetting();
             LoadSelectedServer();
         }
 

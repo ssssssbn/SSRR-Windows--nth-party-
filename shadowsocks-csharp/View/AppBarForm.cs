@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Shadowsocks.Controller;
 
 using Shadowsocks.Controller.Hotkeys;
 
@@ -61,20 +62,22 @@ namespace Shadowsocks.View
                         {
                             IntPtr hWnd = APIWrapper.GetForegroundWindow();
                             //判断当前全屏的应用是否是桌面
-                            if (hWnd.Equals(desktopHandle) || hWnd.Equals(shellHandle))
+                            if (hWnd.Equals(desktopHandle) || hWnd.Equals(shellHandle)) 
                             {
+                                Program.SystemInFullScreenMode = false;
                                 if (!HotKeys.IshotKeyManagerRunning)
                                     HotKeys.Init();
-                                break;
                             }
                             //判断是否全屏
-                            if ((int)m.LParam == 1)
+                            else if ((int)m.LParam == 1)
                             {
+                                Program.SystemInFullScreenMode = true;
                                 if (HotKeys.IshotKeyManagerRunning)
                                     HotKeys.StophotKeyManager();
                             }
                             else
                             {
+                                Program.SystemInFullScreenMode = false;
                                 if (!HotKeys.IshotKeyManagerRunning)
                                     HotKeys.Init();
                             }

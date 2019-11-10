@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.btnCancel = new System.Windows.Forms.Button();
-            this.btnOK = new System.Windows.Forms.Button();
+            this.btnClose = new System.Windows.Forms.Button();
+            this.btnOKAndEnable = new System.Windows.Forms.Button();
             this.btnRegisterAll = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.RegHotkeysAtStartupLabel = new System.Windows.Forms.Label();
@@ -47,50 +47,54 @@
             this.ServerMoveDownTextBox = new System.Windows.Forms.TextBox();
             this.RegHotkeysAtStartupCheckBox = new System.Windows.Forms.CheckBox();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+            this.btnDisableAll = new System.Windows.Forms.Button();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.SuspendLayout();
             // 
-            // btnCancel
+            // btnClose
             // 
-            this.btnCancel.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.btnCancel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(261, 3);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.btnCancel.Size = new System.Drawing.Size(123, 31);
-            this.btnCancel.TabIndex = 2;
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.CancelButton_Click);
+            this.btnClose.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnClose.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnClose.Font = new System.Drawing.Font("Microsoft YaHei", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btnClose.Location = new System.Drawing.Point(301, 3);
+            this.btnClose.Name = "btnClose";
+            this.btnClose.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.btnClose.Size = new System.Drawing.Size(105, 35);
+            this.btnClose.TabIndex = 0;
+            this.btnClose.Text = "Close";
+            this.btnClose.UseVisualStyleBackColor = true;
+            this.btnClose.Click += new System.EventHandler(this.BtnClose_Click);
             // 
-            // btnOK
+            // btnOKAndEnable
             // 
-            this.btnOK.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.btnOK.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnOK.Location = new System.Drawing.Point(132, 3);
-            this.btnOK.Name = "btnOK";
-            this.btnOK.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.btnOK.Size = new System.Drawing.Size(123, 31);
-            this.btnOK.TabIndex = 1;
-            this.btnOK.Text = "OK";
-            this.btnOK.UseVisualStyleBackColor = true;
-            this.btnOK.Click += new System.EventHandler(this.OKButton_Click);
+            this.btnOKAndEnable.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnOKAndEnable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnOKAndEnable.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.btnOKAndEnable.Font = new System.Drawing.Font("Microsoft YaHei", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.btnOKAndEnable.Location = new System.Drawing.Point(190, 3);
+            this.btnOKAndEnable.Name = "btnOKAndEnable";
+            this.btnOKAndEnable.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.btnOKAndEnable.Size = new System.Drawing.Size(105, 35);
+            this.btnOKAndEnable.TabIndex = 1;
+            this.btnOKAndEnable.Text = "OK And Enable";
+            this.btnOKAndEnable.UseVisualStyleBackColor = true;
+            this.btnOKAndEnable.Click += new System.EventHandler(this.BtnOKAndEnable_Click);
             // 
             // btnRegisterAll
             // 
-            this.btnRegisterAll.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.btnRegisterAll.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.btnRegisterAll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnRegisterAll.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnRegisterAll.Font = new System.Drawing.Font("Microsoft YaHei", 9F);
             this.btnRegisterAll.Location = new System.Drawing.Point(3, 3);
             this.btnRegisterAll.Name = "btnRegisterAll";
             this.btnRegisterAll.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.btnRegisterAll.Size = new System.Drawing.Size(123, 31);
-            this.btnRegisterAll.TabIndex = 0;
+            this.btnRegisterAll.Size = new System.Drawing.Size(70, 35);
+            this.btnRegisterAll.TabIndex = 3;
             this.btnRegisterAll.Text = "Reg All";
             this.btnRegisterAll.UseVisualStyleBackColor = true;
             this.btnRegisterAll.Visible = false;
@@ -303,37 +307,49 @@
             this.tableLayoutPanel2.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tableLayoutPanel2.AutoSize = true;
             this.tableLayoutPanel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tableLayoutPanel2.ColumnCount = 3;
+            this.tableLayoutPanel2.ColumnCount = 4;
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanel2.Controls.Add(this.btnCancel, 2, 0);
+            this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel2.Controls.Add(this.btnRegisterAll, 0, 0);
-            this.tableLayoutPanel2.Controls.Add(this.btnOK, 1, 0);
-            this.tableLayoutPanel2.Location = new System.Drawing.Point(58, 227);
+            this.tableLayoutPanel2.Controls.Add(this.btnClose, 3, 0);
+            this.tableLayoutPanel2.Controls.Add(this.btnOKAndEnable, 2, 0);
+            this.tableLayoutPanel2.Controls.Add(this.btnDisableAll, 1, 0);
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(47, 227);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
             this.tableLayoutPanel2.RowCount = 1;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(387, 37);
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(409, 41);
             this.tableLayoutPanel2.TabIndex = 1;
+            // 
+            // btnDisableAll
+            // 
+            this.btnDisableAll.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.btnDisableAll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnDisableAll.Location = new System.Drawing.Point(79, 3);
+            this.btnDisableAll.Name = "btnDisableAll";
+            this.btnDisableAll.Size = new System.Drawing.Size(105, 35);
+            this.btnDisableAll.TabIndex = 2;
+            this.btnDisableAll.Text = "Disable All";
+            this.btnDisableAll.UseVisualStyleBackColor = true;
+            this.btnDisableAll.Click += new System.EventHandler(this.BtnDisableAll_Click);
             // 
             // tableLayoutPanel3
             // 
-            this.tableLayoutPanel3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.tableLayoutPanel3.AutoSize = true;
             this.tableLayoutPanel3.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tableLayoutPanel3.ColumnCount = 1;
             this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanel3.Controls.Add(this.tableLayoutPanel2, 0, 1);
             this.tableLayoutPanel3.Controls.Add(this.tableLayoutPanel1, 0, 0);
-            this.tableLayoutPanel3.Location = new System.Drawing.Point(12, 12);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel3.Margin = new System.Windows.Forms.Padding(0);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 2;
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(503, 267);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(503, 271);
             this.tableLayoutPanel3.TabIndex = 0;
             // 
             // HotkeySettingsForm
@@ -341,9 +357,11 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(527, 291);
+            this.CancelButton = this.btnOKAndEnable;
+            this.ClientSize = new System.Drawing.Size(784, 562);
             this.Controls.Add(this.tableLayoutPanel3);
-            this.Font = new System.Drawing.Font("微软雅黑", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.Font = new System.Drawing.Font("Microsoft YaHei", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -369,8 +387,8 @@
         private System.Windows.Forms.Label CallClipboardAndQRCodeScanningLabel;
         private System.Windows.Forms.Label ServerMoveUpLabel;
         private System.Windows.Forms.Label ServerMoveDownLabel;
-        private System.Windows.Forms.Button btnOK;
-        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnOKAndEnable;
+        private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.TextBox CallClipboardAndQRCodeScanningTextBox;
         private System.Windows.Forms.TextBox SwitchAllowLanTextBox;
         private System.Windows.Forms.TextBox SwitchLoadBalanceTextBox;
@@ -383,5 +401,6 @@
         private System.Windows.Forms.CheckBox RegHotkeysAtStartupCheckBox;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel3;
+        private System.Windows.Forms.Button btnDisableAll;
     }
 }

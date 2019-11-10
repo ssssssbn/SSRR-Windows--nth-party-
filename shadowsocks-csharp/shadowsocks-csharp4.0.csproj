@@ -11,7 +11,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Shadowsocks</RootNamespace>
     <AssemblyName>ShadowsocksR</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>Shadowsocks.Program</StartupObject>
     <ApplicationIcon>shadowsocks.ico</ApplicationIcon>
@@ -23,6 +23,8 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
     <PublishUrl>C:\Users\ZGR\Desktop\release\</PublishUrl>
     <Install>false</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -39,8 +41,6 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -67,10 +67,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>3B286C943DA4222449BCE769DB9BBEA8F1E04319</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>47433BB0304654A602347D108F26049A1103D378</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>shadowsocks-csharp4.0_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>shadowsocks-csharp4.0_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -142,7 +142,7 @@
     <Reference Include="System.XML" />
     <Reference Include="WindowsBase" />
     <Reference Include="zxing.presentation, Version=0.16.4.0, Culture=neutral, PublicKeyToken=4e88037ac681fe60, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZXing.Net.0.16.4\lib\net461\zxing.presentation.dll</HintPath>
+      <HintPath>..\packages\ZXing.Net.0.16.4\lib\net47\zxing.presentation.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -245,6 +245,18 @@
     <Compile Include="Model\IPSegment.cs" />
     <Compile Include="Model\LRUCache.cs" />
     <Compile Include="Model\MinSearchTree.cs" />
+    <Compile Include="Model\MyFormsTimer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Model\MyFormsTimer.Designer.cs">
+      <DependentUpon>MyFormsTimer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Model\MyTimer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Model\MyWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Model\Server.cs" />
     <Compile Include="Model\Configuration.cs" />
     <Compile Include="Model\ServerSelectStrategy.cs" />
@@ -268,6 +280,7 @@
     <Compile Include="Util\CRC.cs" />
     <Compile Include="Util\EnvCheck.cs" />
     <Compile Include="Util\ServerName.cs" />
+    <Compile Include="Util\TcpingManager.cs" />
     <Compile Include="Util\Util.cs" />
     <Compile Include="View\AppBarForm.cs">
       <SubType>Form</SubType>
@@ -344,6 +357,9 @@
     <Compile Include="View\SubscribeForm.designer.cs">
       <DependentUpon>SubscribeForm.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Model\MyFormsTimer.resx">
+      <DependentUpon>MyFormsTimer.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="View\AppBarForm.resx">
       <DependentUpon>AppBarForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -391,6 +407,9 @@
     <None Include="Data\libsscrypto.dll.gz" />
     <None Include="Data\mgwz.dll.gz" />
     <None Include="Data\privoxy.exe.gz" />
+    <None Include="packages.config" />
+    <None Include="Properties\DataSources\Shadowsocks.Model.ServerSubscribe.datasource" />
+    <None Include="shadowsocks-csharp4.0_1_TemporaryKey.pfx" />
     <None Include="shadowsocks-csharp4.0_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

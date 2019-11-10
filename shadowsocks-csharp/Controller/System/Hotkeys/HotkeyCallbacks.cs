@@ -11,6 +11,8 @@ namespace Shadowsocks.Controller.Hotkeys
         private Configuration _config;
         private readonly MenuViewController _viewController;
 
+        private System.Timers.Timer timerTriggerLimit;
+
         public static void InitInstance()
         {
             if (Instance != null)
@@ -19,6 +21,14 @@ namespace Shadowsocks.Controller.Hotkeys
             }
 
             Instance = new HotkeyCallbacks();
+        }
+
+        public static void Destroy()
+        {
+            if (Instance == null)
+                return;
+            Instance = new HotkeyCallbacks(false);
+            Instance = null;
         }
 
         /// <summary>
@@ -40,20 +50,47 @@ namespace Shadowsocks.Controller.Hotkeys
 
         private readonly ShadowsocksController _controller;
 
-        private HotkeyCallbacks()
+        private HotkeyCallbacks(bool enable = true)
         {
-            _controller = Program.GetController();
-            _viewController = Program._viewController;
+            if (enable)
+            {
+                _controller = Program.GetController();
+                _viewController = Program.GetMenuViewController();
+                if (timerTriggerLimit == null)
+                {
+                    timerTriggerLimit = new System.Timers.Timer(150.0);
+                    timerTriggerLimit.AutoReset = false;
+                }
+
+            }
+            else
+            {
+                _controller = null;
+                _viewController = null;
+                if (timerTriggerLimit != null)
+                {
+                    timerTriggerLimit.Stop();
+                    timerTriggerLimit.Dispose();
+                    timerTriggerLimit = null;
+                }
+            }
         }
+
+
 
         #endregion
 
         #region Callbacks
 
-
         private void SwitchProxyModeCallback()
         {
-            _config = Configuration.Load();
+            if (timerTriggerLimit.Enabled)
+            {
+                return;
+            }
+            timerTriggerLimit.Start();
+
+            _config = _controller.GetCurrentConfiguration();// Configuration.Load();
             //var config = _controller.GetConfiguration();
             switch (_config.sysProxyMode)
             {
@@ -73,41 +110,61 @@ namespace Shadowsocks.Controller.Hotkeys
                     break;
             }
             _viewController.ShownotifyIcontext();
+
         }
 
         private void SwitchLoadBalanceCallback()
         {
-            _config = Configuration.Load();
-            _controller.ToggleSelectRandom(!_config.random);
+            if (timerTriggerLimit.Enabled)
+                return;
+            timerTriggerLimit.Start();
+
+            _config = _controller.GetCurrentConfiguration(); // Configuration.Load();
+            _controller.ToggleEnableBalance(!_config.enableBalance);
             _viewController.ShownotifyIcontext();
 
             //bool enabled = _controller.GetConfiguration().enabled;
             //_controller.ToggleMode(ProxyMode.Direct);
             //_controller.ToggleEnable(!enabled);
+            
         }
 
         private void SwitchAllowLanCallback()
         {
-            _config = Configuration.Load();
+            if (timerTriggerLimit.Enabled)
+                return;
+            timerTriggerLimit.Start();
+
+            _config = _controller.GetCurrentConfiguration(); //Configuration.Load();
             _controller.ToggleShareOverLAN(!_config.shareOverLan);
             if(!_config.shareOverLan)
-                _viewController.ShowTextByNotifyIconBalloon(I18N.GetString("Tips"),I18N.GetString("Share Over LAN")+":"+I18N.GetString("On"),System.Windows.Forms.ToolTipIcon.Info,1);
+                _viewController.ShowTextByNotifyIconBalloon(I18N.GetString("Tips"),I18N.GetString("Share Over LAN")+":"+I18N.GetString("On"),System.Windows.Forms.ToolTipIcon.Info);
             else
-                _viewController.ShowTextByNotifyIconBalloon(I18N.GetString("Tips"), I18N.GetString("Share Over LAN") + ":" + I18N.GetString("Off"), System.Windows.Forms.ToolTipIcon.Info, 1);
+                _viewController.ShowTextByNotifyIconBalloon(I18N.GetString("Tips"), I18N.GetString("Share Over LAN") + ":" + I18N.GetString("Off"), System.Windows.Forms.ToolTipIcon.Info);
+            
         }
 
         private void ClipboardAndQRCodeScanningCallback()
         {
-            Program._viewController.CallClipboardAndQRCodeScanning_HotKey();
+            if (timerTriggerLimit.Enabled)
+                return;
+            timerTriggerLimit.Start();
+
+            _viewController.CallClipboardAndQRCodeScanning_HotKey();
+            
         }
 
-        private void ShowLogsCallback()
-        {
-            //Program._viewController.ShowLogForm_HotKey();
-        }
+        //private void ShowLogsCallback()
+        //{
+        //    //Program._viewController.ShowLogForm_HotKey();
+        //}
 
         private void ServerMoveUpCallback()
         {
+            if (timerTriggerLimit.Enabled)
+                return;
+            timerTriggerLimit.Start();
+
             int currIndex;
             int serverCount;
             GetCurrServerInfo(out currIndex, out serverCount);
@@ -122,10 +179,15 @@ namespace Shadowsocks.Controller.Hotkeys
             }
             _controller.SelectServerIndex(currIndex);
             _viewController.ShownotifyIcontext();
+            
         }
 
         private void ServerMoveDownCallback()
         {
+            if (timerTriggerLimit.Enabled)
+                return;
+            timerTriggerLimit.Start();
+
             int currIndex;
             int serverCount;
             GetCurrServerInfo(out currIndex, out serverCount);
@@ -140,13 +202,14 @@ namespace Shadowsocks.Controller.Hotkeys
             }
             _controller.SelectServerIndex(currIndex);
             _viewController.ShownotifyIcontext();
+            
         }
 
         private void GetCurrServerInfo(out int currIndex, out int serverCount)
         {
             var currConfig = _controller.GetCurrentConfiguration();
             currIndex = currConfig.index;
-            serverCount = currConfig.configs.Count;
+            serverCount = currConfig.Servers.Count;
         }
 
         #endregion

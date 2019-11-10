@@ -24,6 +24,11 @@ namespace Shadowsocks.Util
         private delegate IPHostEntry GetHostEntryHandler(string ip);
 
         private static LRUCache<string, IPAddress> dnsBuffer = new LRUCache<string, IPAddress>();
+        
+        //Windows Internet API (WinINet) 网络连接状况检测
+        [DllImport("wininet.dll")]
+        private extern static bool InternetGetConnectedState(out int connDescription, int ReservedValue);
+
 
         public static LRUCache<string, IPAddress> DnsBuffer
         {
@@ -560,5 +565,206 @@ namespace Shadowsocks.Util
         private static extern bool SetProcessWorkingSetSize(IntPtr process,
             UIntPtr minimumWorkingSetSize, UIntPtr maximumWorkingSetSize);
 #endif
+        
+        //check if a connection to the Internet can be established 
+        public static bool IsConnectionAvailable()
+        {
+            int Desc = 0;
+            return InternetGetConnectedState(out Desc, 0);
+        }
+
+        public static List<string> IsServerSubscriptionRepeat(List<ServerSubscribe> allServerSubscriptions,string url)
+        {
+            List<string> listrepeated = new List<string>();
+            foreach(ServerSubscribe ss in allServerSubscriptions)
+                if (url == ss.URL)
+                {
+                    listrepeated.Add(ss.id);
+                }
+            listrepeated.RemoveAt(0);
+            return listrepeated;
+        }
+
+        public static string GetHostFromUrl(string url)
+        {
+            string ret = null;
+            try
+            {
+                string[] host = url.Split(new string[] { "//" }, StringSplitOptions.RemoveEmptyEntries)[1].Split('/')[0].Split('.');
+                if (host.Length == 2)
+                    return host[0];
+                else if (host.Length == 3)
+                    return host[1];
+
+                foreach (string str in host)
+                {
+                    ret += (ret == null ? "" : ".") + str;
+                }
+            }
+            catch (Exception e)
+            {
+                ret = url;
+            }
+            return ret;
+        }
+
+        public static void SortServers(Configuration config)
+        {
+            List<ServerSubscribe> listSubscribes = config.serverSubscribes;
+            List<Server> listServers = config.Servers;
+
+            List<ServerSubscribe> listValidSubscribes = new List<ServerSubscribe>();
+            foreach (ServerSubscribe ss in listSubscribes)
+                if (ss.Group != "" && (Utils.IsServerSubscriptionRepeat(listSubscribes, ss.URL).Count == 0 || listValidSubscribes.FindIndex(t => t.URL == ss.URL) == -1)) 
+                    listValidSubscribes.Add(ss.Clone());
+
+            string selectedserverid = listServers[config.index].id;
+
+            List<Server> sortedServer = new List<Server>();
+            foreach (ServerSubscribe ss in listValidSubscribes)
+            {
+                int index = -1;
+                while ((index = listServers.FindIndex(t => t.group == ss.Group)) != -1)
+                {
+                    sortedServer.Add(listServers[index]);
+                    listServers.RemoveAt(index);
+                };
+            }
+            foreach (Server server in sortedServer)
+                listServers.Add(server);
+            int newselectedserverindex = listServers.FindIndex(t => t.id == selectedserverid);
+            if (newselectedserverindex != -1 || (newselectedserverindex = listServers.FindIndex(t => t.enable)) != -1)
+                config.index = newselectedserverindex;
+            else
+                config.index = 0;
+        }
+
+
+
+        private static string[] InternationalTimeDomainName ={
+        "time.windows.com",
+        "time.nist.gov",
+        "time-nw.nist.gov",
+        "time-a.nist.gov",
+        "time-b.nist.gov"
+        };
+        public static string LastHost = null;
+        //public static DateTime LastSysTime;
+        public static DateTime GetLocalInternationalTime()
+        {
+            //Returns UTC/GMT using an NIST server if possible,   
+            // degrading to simply returning the system clock  
+
+            //If we are successful in getting NIST time, then  
+            // LastHost indicates which server was used and  
+            // LastSysTime contains the system time of the call  
+            // If LastSysTime is not within 15 seconds of NIST time,  
+            //  the system clock may need to be reset  
+            // If LastHost is "", time is equal to system clock  
+
+            IPAddress ipaddress = null;
+
+            try
+            {
+                if (LastHost != null)
+                {
+                    if (ipaddress != null)
+                    {
+                        DateTime ret = GetNISTTime(ipaddress.ToString());
+                        if (ret > DateTime.MinValue)
+                        {
+                            return TimeZoneInfo.ConvertTimeFromUtc(ret, TimeZoneInfo.Local);
+                        }
+                    }
+                }
+                foreach (string DomainName in InternationalTimeDomainName)
+                {
+                    ipaddress = QueryDns(DomainName, null);
+                    if (ipaddress != null)
+                    {
+                        DateTime ret = GetNISTTime(ipaddress.ToString());
+                        if (ret > DateTime.MinValue)
+                        {
+                            LastHost = ipaddress.ToString();
+                            return TimeZoneInfo.ConvertTimeFromUtc(ret, TimeZoneInfo.Local); // TODO: might not be correct. Was : Exit For  
+                        }
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Logging.LogUsefulException(e);
+            }
+
+
+            //if (string.IsNullOrEmpty(LastHost))
+            //{
+            //    //No server in list was successful so use system time  
+            //    result = DateTime.UtcNow;
+            //}
+
+            return default(DateTime);
+        }
+        private static DateTime GetNISTTime(string host)
+        {
+            //Returns DateTime.MinValue if host unreachable or does not produce time  
+            //DateTime result = default(DateTime);
+            string timeStr = null;
+
+            try
+            {
+                StreamReader reader = new StreamReader(new TcpClient(host, 13).GetStream());
+                //LastSysTime = DateTime.UtcNow;
+                timeStr = reader.ReadToEnd();
+                reader.Close();
+            }
+            catch (SocketException ex)
+            {
+                //Couldn't connect to server, transmission error  
+                Debug.WriteLine("Socket Exception [" + host + "]");
+                return DateTime.MinValue;
+            }
+            catch (Exception ex)
+            {
+                //Some other error, such as Stream under/overflow  
+                return DateTime.MinValue;
+            }
+
+            //Parse timeStr  
+            if ((timeStr.Substring(38, 9) != "UTC(NIST)"))
+            {
+                //This signature should be there  
+                return DateTime.MinValue;
+            }
+            if ((timeStr.Substring(30, 1) != "0"))
+            {
+                //Server reports non-optimum status, time off by as much as 5 seconds  
+                return DateTime.MinValue;
+                //Try a different server  
+            }
+
+            int jd = int.Parse(timeStr.Substring(1, 5));
+            int yr = int.Parse(timeStr.Substring(7, 2));
+            int mo = int.Parse(timeStr.Substring(10, 2));
+            int dy = int.Parse(timeStr.Substring(13, 2));
+            int hr = int.Parse(timeStr.Substring(16, 2));
+            int mm = int.Parse(timeStr.Substring(19, 2));
+            int sc = int.Parse(timeStr.Substring(22, 2));
+
+            if ((jd < 15020))
+            {
+                //Date is before 1900  
+                return DateTime.MinValue;
+            }
+            if ((jd > 51544))
+                yr += 2000;
+            else
+                yr += 1900;
+
+            return new DateTime(yr, mo, dy, hr, mm, sc);
+        }
     }
+
 }
+

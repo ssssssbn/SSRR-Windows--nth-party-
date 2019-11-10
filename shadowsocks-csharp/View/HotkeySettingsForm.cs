@@ -8,6 +8,7 @@ using Shadowsocks.Controller;
 using Shadowsocks.Model;
 using Shadowsocks.Properties;
 using Shadowsocks.Util;
+using Shadowsocks.Controller.Hotkeys;
 using static Shadowsocks.Controller.HotkeyReg;
 
 namespace Shadowsocks.View
@@ -34,11 +35,6 @@ namespace Shadowsocks.View
             LoadCurrentConfiguration();
         }
 
-        //public void RegOrUnregAppBar(bool registered)
-        //{
-        //    RegAppBar(registered);
-        //}
-
         private void UpdateTexts()
         {
             // I18N stuff
@@ -49,8 +45,9 @@ namespace Shadowsocks.View
             ServerMoveUpLabel.Text = I18N.GetString(ServerMoveUpLabel.Text);
             ServerMoveDownLabel.Text = I18N.GetString(ServerMoveDownLabel.Text);
             RegHotkeysAtStartupLabel.Text = I18N.GetString(RegHotkeysAtStartupLabel.Text);
-            btnOK.Text = I18N.GetString(btnOK.Text);
-            btnCancel.Text = I18N.GetString(btnCancel.Text);
+            btnOKAndEnable.Text = I18N.GetString(btnOKAndEnable.Text);
+            btnClose.Text = I18N.GetString(btnClose.Text);
+            btnDisableAll.Text = I18N.GetString(btnDisableAll.Text);
             btnRegisterAll.Text = I18N.GetString(btnRegisterAll.Text);
             this.Text = I18N.GetString(this.Text);
             //SwitchAllowLanLabel.Text = I18N.GetString("Switch share over LAN");
@@ -66,7 +63,11 @@ namespace Shadowsocks.View
 
         private void controller_ConfigChanged(object sender, EventArgs e)
         {
-            LoadCurrentConfiguration();
+            List<string> list = (List<string>)((object[])sender)[0];
+            if(list.Contains("All") || list.Contains(this.Name))
+            {
+                LoadCurrentConfiguration();
+            }
         }
 
         private void LoadCurrentConfiguration()
@@ -156,6 +157,8 @@ namespace Shadowsocks.View
         /// </summary>
         private void HotkeyUp(object sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Tab)
+                return;
             var tb = (TextBox)sender;
             var content = tb.Text.TrimEnd();
             if (content.Length >= 1 && content[content.Length - 1] == '+')
@@ -164,22 +167,32 @@ namespace Shadowsocks.View
             }
             if (tb.Text != _tmpHotkeystr) 
             {
-                HotkeySettingsForm._IsModified = true;
+                _IsModified = true;
                 TryRegAllHotkeys();
             }
             _tmpHotkeystr = "";
         }
 
-        private void CancelButton_Click(object sender, EventArgs e)
+        private void BtnClose_Click(object sender, EventArgs e)
         {
-            if(_IsModified)
+            if (!HotKeys._Enabled)
+                HotKeys.Destroy();
+            else if (_IsModified)//&& HotKeys._Enabled)
                 RegisterAllHotkeys(_TempHotkeyConfig);
             this.Close();
         }
 
-        private void OKButton_Click(object sender, EventArgs e)
+        private void BtnDisableAll_Click(object sender, EventArgs e)
+        {
+            HotKeys.Destroy();
+            HotKeys._Enabled = false;
+            this.Close();
+        }
+
+        private void BtnOKAndEnable_Click(object sender, EventArgs e)
         {
             _modifiedHotkeyConfig = GetConfigFromUI();
+
             // try to register, notify to change settings if failed
             if (!RegisterAllHotkeys(_modifiedHotkeyConfig))
             {
@@ -198,6 +211,7 @@ namespace Shadowsocks.View
             {
                 if (MenuViewController.appbarform == null)
                     MenuViewController.appbarform = new AppBarForm();
+                HotKeys._Enabled = true;
             }
                 
             //IsRegHotkeys = true;
@@ -249,13 +263,19 @@ namespace Shadowsocks.View
         private void TryRegAllHotkeys()
         {
             _modifiedHotkeyConfig = GetConfigFromUI();
-            RegHotkeyFromString(_modifiedHotkeyConfig.SwitchProxyMode, "SwitchProxyModeCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchProxyMode, SwitchProxyModeLabel, result));
-            RegHotkeyFromString(_modifiedHotkeyConfig.SwitchLoadBalance, "SwitchLoadBalanceCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchLoadBalance, SwitchLoadBalanceLabel, result));
-            RegHotkeyFromString(_modifiedHotkeyConfig.SwitchAllowLan, "SwitchAllowLanCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchAllowLan, SwitchAllowLanLabel, result));
-            RegHotkeyFromString(_modifiedHotkeyConfig.CallClipboardAndQRCodeScanning, "ClipboardAndQRCodeScanningCallback", result => HandleRegResult(_modifiedHotkeyConfig.CallClipboardAndQRCodeScanning, CallClipboardAndQRCodeScanningLabel, result));
+            if (this.SwitchProxyModeTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.SwitchProxyMode, "SwitchProxyModeCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchProxyMode, SwitchProxyModeLabel, result));
+            else if (this.SwitchLoadBalanceTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.SwitchLoadBalance, "SwitchLoadBalanceCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchLoadBalance, SwitchLoadBalanceLabel, result));
+            else if (this.SwitchAllowLanTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.SwitchAllowLan, "SwitchAllowLanCallback", result => HandleRegResult(_modifiedHotkeyConfig.SwitchAllowLan, SwitchAllowLanLabel, result));
+            else if (this.CallClipboardAndQRCodeScanningTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.CallClipboardAndQRCodeScanning, "ClipboardAndQRCodeScanningCallback", result => HandleRegResult(_modifiedHotkeyConfig.CallClipboardAndQRCodeScanning, CallClipboardAndQRCodeScanningLabel, result));
             //RegHotkeyFromString(_modifiedHotkeyConfig.ShowLogs, "ShowLogsCallback", result => HandleRegResult(_modifiedHotkeyConfig.ShowLogs, CallClipboardAndQRCodeScanningLabel, result));
-            RegHotkeyFromString(_modifiedHotkeyConfig.ServerMoveUp, "ServerMoveUpCallback", result => HandleRegResult(_modifiedHotkeyConfig.ServerMoveUp, ServerMoveUpLabel, result));
-            RegHotkeyFromString(_modifiedHotkeyConfig.ServerMoveDown, "ServerMoveDownCallback", result => HandleRegResult(_modifiedHotkeyConfig.ServerMoveDown, ServerMoveDownLabel, result));
+            else if (this.ServerMoveUpTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.ServerMoveUp, "ServerMoveUpCallback", result => HandleRegResult(_modifiedHotkeyConfig.ServerMoveUp, ServerMoveUpLabel, result));
+            else if (this.ServerMoveDownTextBox.Focused)
+                RegHotkeyFromString(_modifiedHotkeyConfig.ServerMoveDown, "ServerMoveDownCallback", result => HandleRegResult(_modifiedHotkeyConfig.ServerMoveDown, ServerMoveDownLabel, result));
         }
 
         private void HotkeySettingsForm_FormClosed(object sender, FormClosedEventArgs e)

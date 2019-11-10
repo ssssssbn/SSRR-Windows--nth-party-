@@ -12,7 +12,7 @@ namespace Shadowsocks.Controller
     public abstract class IHandler
     {
         public delegate void InvokeHandler();
-        public abstract void Shutdown();
+        public abstract void Shutdown(bool forced);
     }
 
     public class CallbackState

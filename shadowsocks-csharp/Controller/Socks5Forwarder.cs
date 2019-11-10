@@ -48,6 +48,7 @@ namespace Shadowsocks.Controller
             return false;
         }
 
+        //public string host = null;
         public int IsHandle(byte[] firstPacket, int length, Socket socket)
         {
             if (length >= 7 && _config.proxyRuleMode != (int)ProxyRuleMode.Disable)
@@ -75,45 +76,42 @@ namespace Shadowsocks.Controller
                         {
                             if ((_config.proxyRuleMode == (int)ProxyRuleMode.BypassLanAndChina || _config.proxyRuleMode == (int)ProxyRuleMode.BypassLanAndNotChina) && _IPRange != null || _config.proxyRuleMode == (int)ProxyRuleMode.UserCustom)
                             {
-                                if (!IPAddress.TryParse(host, out ipAddress))
+                                if (_config.proxyRuleMode == (int)ProxyRuleMode.UserCustom)
                                 {
-                                    if (_config.proxyRuleMode == (int)ProxyRuleMode.UserCustom)
+                                    Shadowsocks.Model.HostMap hostMap = HostMap.Instance();
+                                    string host_addr;
+                                    if (hostMap.GetHost(host, out host_addr))
                                     {
-                                        Shadowsocks.Model.HostMap hostMap = HostMap.Instance();
-                                        string host_addr;
-                                        if (hostMap.GetHost(host, out host_addr))
+                                        if (!String.IsNullOrEmpty(host_addr))
                                         {
-                                            if (!String.IsNullOrEmpty(host_addr))
+                                            string lower_host_addr = host_addr.ToLower();
+                                            if (lower_host_addr.StartsWith("reject")
+                                                || lower_host_addr.StartsWith("direct")
+                                                )
                                             {
-                                                string lower_host_addr = host_addr.ToLower();
-                                                if (lower_host_addr.StartsWith("reject")
-                                                    || lower_host_addr.StartsWith("direct")
-                                                    )
+                                                return CONNECT_DIRECT;
+                                            }
+                                            else if (lower_host_addr.StartsWith("localproxy"))
+                                            {
+                                                return CONNECT_LOCALPROXY;
+                                            }
+                                            else if (lower_host_addr.StartsWith("remoteproxy"))
+                                            {
+                                                return CONNECT_REMOTEPROXY;
+                                            }
+                                            else if (lower_host_addr.IndexOf('.') >= 0 || lower_host_addr.IndexOf(':') >= 0)
+                                            {
+                                                if (!IPAddress.TryParse(lower_host_addr, out ipAddress))
                                                 {
-                                                    return CONNECT_DIRECT;
-                                                }
-                                                else if (lower_host_addr.StartsWith("localproxy"))
-                                                {
-                                                    return CONNECT_LOCALPROXY;
-                                                }
-                                                else if (lower_host_addr.StartsWith("remoteproxy"))
-                                                {
-                                                    return CONNECT_REMOTEPROXY;
-                                                }
-                                                else if (lower_host_addr.IndexOf('.') >= 0 || lower_host_addr.IndexOf(':') >= 0)
-                                                {
-                                                    if (!IPAddress.TryParse(lower_host_addr, out ipAddress))
-                                                    {
-                                                        //
-                                                    }
+                                                    //
                                                 }
                                             }
                                         }
                                     }
-                                    if (ipAddress == null)
-                                    {
-                                        ipAddress = Utils.DnsBuffer.Get(host);
-                                    }
+                                }
+                                if (ipAddress == null)
+                                {
+                                    ipAddress = Utils.DnsBuffer.Get(host);
                                 }
                                 if (ipAddress == null)
                                 {
@@ -138,7 +136,7 @@ namespace Shadowsocks.Controller
                                     }
                                     else
                                     {
-                                        Logging.Log(LogLevel.Debug, "DNS query fail: " + host);
+                                        Logging.Debug("DNS query fail: " + host);
                                     }
                                 }
                             }
@@ -646,7 +644,7 @@ namespace Shadowsocks.Controller
                 Server.GetForwardServerRef().GetConnections().DecRef(this);
             }
 
-            public override void Shutdown()
+            public override void Shutdown(bool forced = false)
             {
                 InvokeHandler handler = () => Close();
                 handler.BeginInvoke(null, null);

@@ -9,11 +9,16 @@ namespace Shadowsocks.Controller
 {
     public class GFWListUpdater
     {
-        private const string GFWLIST_URL = "https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt";
+        private const string GFWLIST_URL = @"https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt";
+        private const string GFWLIST_BACKUP_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/gfwlist.txt";//"https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/ssr/gfwlist.txt";
+        private const string GFWLIST_TEMPLATE_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/ss_gfw.pac";//"https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/ssr/ss_gfw.pac";
 
-        private const string GFWLIST_BACKUP_URL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/ssr/gfwlist.txt";
+        private const string SS_LanIP_TEMPLATE_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/ss_lanip.pac";
+        private const string SS_WHITE_TEMPLATE_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/ss_white.pac";
+        private const string SS_WHITER_TEMPLATE_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/ss_white_r.pac";
+        private const string SS_CNIP_TEMPLATE_URL = @"https://raw.githubusercontent.com/HMBSbige/Text_Translation/master/ShadowsocksR/ss_cnip.pac";
 
-        private const string GFWLIST_TEMPLATE_URL = "https://raw.githubusercontent.com/shadowsocksrr/breakwa11.github.io/master/ssr/ss_gfw.pac";
+        private const string User_Agent = @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36";//"Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36";
 
         private static string PAC_FILE = PACServer.PAC_FILE;
 
@@ -33,14 +38,21 @@ namespace Shadowsocks.Controller
 
         public class ResultEventArgs : EventArgs
         {
-            public bool Success;
+            public readonly bool Success;
 
             public ResultEventArgs(bool success)
             {
                 this.Success = success;
             }
         }
-
+        public enum Templates
+        {
+            ss_gfw,
+            ss_lanip,
+            ss_white,
+            ss_white_r,
+            ss_cnip
+        }
         private void http_DownloadGFWTemplateCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
             try
@@ -179,10 +191,7 @@ namespace Shadowsocks.Controller
             {
                 lastConfig = config;
                 WebClient http = new WebClient();
-                http.Headers.Add("User-Agent",
-                    String.IsNullOrEmpty(config.proxyUserAgent) ?
-                    "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36"
-                    : config.proxyUserAgent);
+                http.Headers.Add("User-Agent", String.IsNullOrEmpty(config.proxyUserAgent) ? User_Agent : config.proxyUserAgent);
                 WebProxy proxy = new WebProxy(IPAddress.Loopback.ToString(), config.localPort);
                 if (!string.IsNullOrEmpty(config.authPass))
                 {
@@ -195,10 +204,7 @@ namespace Shadowsocks.Controller
             else
             {
                 WebClient http = new WebClient();
-                http.Headers.Add("User-Agent",
-                    String.IsNullOrEmpty(config.proxyUserAgent) ?
-                    "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36"
-                    : config.proxyUserAgent);
+                http.Headers.Add("User-Agent",String.IsNullOrEmpty(config.proxyUserAgent) ? User_Agent : config.proxyUserAgent);
                 WebProxy proxy = new WebProxy(IPAddress.Loopback.ToString(), config.localPort);
                 if (!string.IsNullOrEmpty(config.authPass))
                 {
@@ -211,13 +217,31 @@ namespace Shadowsocks.Controller
             }
         }
 
-        public void UpdatePACFromGFWList(Configuration config, string url)
+        public void UpdatePACTo(Configuration config, Templates templates)// string url)
         {
+            string url;
+            switch (templates)
+            {
+                case Templates.ss_gfw:
+                    UpdatePACFromGFWList(config);
+                    return;
+                case Templates.ss_lanip:
+                    url = SS_LanIP_TEMPLATE_URL;
+                    break;
+                case Templates.ss_white:
+                    url = SS_WHITE_TEMPLATE_URL;
+                    break;
+                case Templates.ss_white_r:
+                    url = SS_WHITER_TEMPLATE_URL;
+                    break;
+                case Templates.ss_cnip:
+                    url = SS_CNIP_TEMPLATE_URL;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(templates), templates, null);
+            }
             WebClient http = new WebClient();
-            http.Headers.Add("User-Agent",
-                String.IsNullOrEmpty(config.proxyUserAgent) ?
-                "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.3319.102 Safari/537.36"
-                : config.proxyUserAgent);
+            http.Headers.Add("User-Agent", String.IsNullOrEmpty(config.proxyUserAgent) ? User_Agent : config.proxyUserAgent);
             WebProxy proxy = new WebProxy(IPAddress.Loopback.ToString(), config.localPort);
             if (!string.IsNullOrEmpty(config.authPass))
             {

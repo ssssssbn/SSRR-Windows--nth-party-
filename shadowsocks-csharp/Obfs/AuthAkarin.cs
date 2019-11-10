@@ -62,6 +62,17 @@ namespace Shadowsocks.Obfs
             return _obfs;
         }
 
+        #region Akkariiin 4.9.2 add
+        protected override void Disposing()
+        {
+            if (encryptor != null)
+            {
+                encryptor.Dispose();
+                encryptor = null;
+            }
+        }
+        #endregion Akkariiin 4.9.2 add
+
         public override object InitData()
         {
             return new AuthDataAesChain();
@@ -167,17 +178,22 @@ namespace Shadowsocks.Obfs
             {
                 byte[] rnd_data = new byte[rand_len];
                 random.NextBytes(rnd_data);
-                encryptor.Encrypt(data, datalength, data, out datalength);
+                //encryptor.Encrypt(data, datalength, data, out datalength);  //Akkariiin 4.9.2 del
                 if (datalength > 0)
                 {
+                    encryptor.Encrypt(data, datalength, data, out datalength); //Akkariiin 4.9.2 add
+                    Array.Copy(data, 0, outdata, start_pos, datalength);//Akkariiin 4.9.2 add
                     if (rand_len > 0)
                     {
-                        Array.Copy(data, 0, outdata, start_pos, datalength);
-                        Array.Copy(rnd_data, 0, outdata, start_pos + datalength, rand_len);
-                    }
-                    else
-                    {
-                        Array.Copy(data, 0, outdata, start_pos, datalength);
+                        ////Akkariiin 4.9.2 del
+                        //    Array.Copy(data, 0, outdata, start_pos, datalength);
+                        //    Array.Copy(rnd_data, 0, outdata, start_pos + datalength, rand_len);
+                        //}
+                        //else
+                        //{
+                        //    Array.Copy(data, 0, outdata, start_pos, datalength);
+                        ////Akkariiin 4.9.2 del
+                        rnd_data.CopyTo(outdata, start_pos + datalength);//Akkariiin 4.9.2 add
                     }
                 }
                 else

@@ -14,7 +14,7 @@ namespace Shadowsocks.Controller
         {
             var hotkeyConfig = Configuration.Load().hotkey;
 
-            if (hotkeyConfig == null || !hotkeyConfig.RegHotkeysAtStartup)
+            if (hotkeyConfig == null)// || !hotkeyConfig.RegHotkeysAtStartup)
                 return;
 
             // if any of the hotkey reg fail, undo everything
@@ -31,6 +31,7 @@ namespace Shadowsocks.Controller
                 {
                     MenuViewController.appbarform = new AppBarForm();
                 }
+                HotKeys._Enabled = true;
                 //MenuViewController.SethotkeySettingsForm(Program.GetController());
                 // success
             }

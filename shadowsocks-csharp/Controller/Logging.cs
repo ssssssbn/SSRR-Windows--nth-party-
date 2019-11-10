@@ -29,11 +29,18 @@ namespace Shadowsocks.Controller
         private static object _lock = new object();
         public static bool save_to_file = true;
 
-        public static bool OpenLogFile()
+        public static bool enabled = false;
+
+        public static bool OpenLogFile(bool forced = false)
         {
             try
             {
-                CloseLogFile();
+                if(enabled && !forced)
+                {
+                    return false;
+                }
+                enabled = true;
+                CloseLogFile(false);
 
                 if (save_to_file)
                 {
@@ -68,8 +75,10 @@ namespace Shadowsocks.Controller
             }
         }
 
-        private static void CloseLogFile()
+        public static void CloseLogFile(bool closed = true)
         {
+            if (closed)
+                enabled = false;
             _logStreamWriter?.Dispose();
             _logFileStream?.Dispose();
 
@@ -111,7 +120,7 @@ namespace Shadowsocks.Controller
             string result = string.Empty;
             foreach (StackFrame stack in stacks)
             {
-                result += string.Format("{0}\r\n", stack.GetMethod().ToString());
+                result += string.Format("{0}" + System.Environment.NewLine, stack.GetMethod().ToString());
             }
             return result;
         }
@@ -124,7 +133,7 @@ namespace Shadowsocks.Controller
                 {
                     if (DateTime.Now.ToString("yyyy-MM") != date)
                     {
-                        OpenLogFile();
+                        OpenLogFile(true);
                     }
                 }
             }
@@ -292,12 +301,14 @@ namespace Shadowsocks.Controller
 
         public override void WriteLine(string value)
         {
-            base.WriteLine(GetTimestamp() + value);
+            if (Logging.enabled)
+                base.WriteLine(GetTimestamp() + value);
         }
 
         public override void Write(string value)
         {
-            base.Write(GetTimestamp() + value);
+            if (Logging.enabled)
+                base.Write(GetTimestamp() + value);
         }
     }
 

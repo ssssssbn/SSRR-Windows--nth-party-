@@ -21,5 +21,16 @@ namespace Shadowsocks.Util
 
             return false;
         }
+        public static bool CheckDotNet471()
+        {
+            Int32 installed = Convert.ToInt32(Registry.GetValue(dotNet45Registry, "Release", 0));
+            if (0 == installed)
+                return false;
+
+            if (461308 <= installed)//461308==4.7.1
+                return true;
+
+            return false;
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using Shadowsocks.Controller;
@@ -14,7 +15,7 @@ namespace Shadowsocks.View
 {
     public partial class LogForm : Form
     {
-        private readonly ShadowsocksController _controller;
+        private readonly ShadowsocksController controller;
 
         private const int MaxReadSize = 65536;
 
@@ -22,15 +23,38 @@ namespace Shadowsocks.View
         private string _currentLogFileName;
         private long _currentOffset;
 
-        public LogForm(ShadowsocksController controller)
+        private bool enabled = true;
+
+
+        public LogForm(ShadowsocksController _controller)
         {
-            _controller = controller;
+            controller = _controller;
 
             InitializeComponent();
+            controller.ConfigChanged += LogForm_Load;
+            tbLog.MouseWheel += TbLog_MouseWheel;
 
             Icon = Icon.FromHandle(Resources.ssw128.GetHicon());
 
             UpdateTexts();
+        }
+
+        private void TbLog_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (!tbLog.Bounds.Contains(e.Location))
+            {
+                if (e is HandledMouseEventArgs h)
+                {
+                    h.Handled = true;
+                }
+            }
+            else
+            {
+                if (e is HandledMouseEventArgs h)
+                {
+                    h.Handled = false;
+                }
+            }
         }
 
         private void UpdateTexts()
@@ -64,9 +88,44 @@ namespace Shadowsocks.View
             }
         }
 
+        private delegate void delegateConfigChanged(Object obj, EventArgs e);
         private void LogForm_Load(object sender, EventArgs e)
         {
-            ReadLog();
+            List<string> list = null;
+            if (sender.GetType() == typeof(List<string>))
+                list = (List<string>)((object[])sender)[0];
+            if (list == null || list.Contains("All") || list.Contains(this.Name)) 
+            {
+                if (this.InvokeRequired)
+                {
+                    delegateConfigChanged adelegateConfigChanged = new delegateConfigChanged(LogForm_Load);
+                    this.Invoke(adelegateConfigChanged, new object[] { sender, e });
+                    return;
+                }
+
+                if (controller.GetCurrentConfiguration().enableLogging)
+                {
+                    if (enabled) 
+                    {
+                        enabled = false;
+                        _currentOffset = 0;
+                        tbLog.Clear();
+                        tbLog.AppendText("Logging is enabled." + System.Environment.NewLine);
+                        ReadLog();
+                        refreshTimer.Start();
+                    }
+                }
+                else
+                {
+                    if (!enabled) 
+                    {
+                        enabled = true;
+                        refreshTimer.Stop();
+                        tbLog.Clear();
+                        tbLog.AppendText("Logging is disabled, go to [Option Settings] to enable it." + System.Environment.NewLine);
+                    }
+                }
+            }
         }
 
         private void ReadLog()
@@ -101,16 +160,18 @@ namespace Shadowsocks.View
                     }
 
                     var txt = reader.ReadToEnd();
-                    if (!string.IsNullOrEmpty(txt))
+                    if (!string.IsNullOrEmpty(txt)) 
                     {
-                        logTextBox.AppendText(txt);
-                        logTextBox.ScrollToCaret();
+                        tbLog.AppendText(txt);
                     }
 
                     _currentOffset = reader.BaseStream.Position;
                 }
             }
             catch (FileNotFoundException)
+            {
+            }
+            catch (ArgumentNullException)
             {
             }
 
@@ -124,17 +185,17 @@ namespace Shadowsocks.View
 
         private void LogForm_Shown(object sender, EventArgs e)
         {
-            logTextBox.ScrollToCaret();
+            tbLog.ScrollToCaret();
         }
 
         private void fontToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (FontDialog fontDialog = new FontDialog())
             {
-                fontDialog.Font = logTextBox.Font;
+                fontDialog.Font = tbLog.Font;
                 if (fontDialog.ShowDialog() == DialogResult.OK)
                 {
-                    logTextBox.Font = fontDialog.Font;
+                    tbLog.Font = fontDialog.Font;
                 }
             }
         }
@@ -151,8 +212,7 @@ namespace Shadowsocks.View
 
         private void wrapTextToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            logTextBox.WordWrap = wrapTextToolStripMenuItem.Checked;
-            logTextBox.ScrollToCaret();
+            tbLog.WordWrap = wrapTextToolStripMenuItem.Checked;
         }
 
         private void alwaysOnTopToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
@@ -164,7 +224,12 @@ namespace Shadowsocks.View
         {
             Logging.Clear();
             _currentOffset = 0;
-            logTextBox.Clear();
+            tbLog.Clear();
+        }
+
+        private void LogForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            controller.ConfigChanged -= LogForm_Load;
         }
     }
 }

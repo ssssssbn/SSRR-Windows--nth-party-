@@ -10,13 +10,15 @@ namespace Shadowsocks.Controller.Hotkeys
 {
     public static class HotKeys
     {
-        public static bool IshotKeyManagerRunning = true;
+        public static bool _Enabled = false;
+        public static bool IshotKeyManagerRunning = false;
 
         private static HotKeyManager _hotKeyManager;
 
         public delegate void HotKeyCallBackHandler();
         // map key and corresponding handler function
         private static Dictionary<HotKey, HotKeyCallBackHandler> _keymap = new Dictionary<HotKey, HotKeyCallBackHandler>();
+        
 
         public static void Init()
         {
@@ -36,11 +38,14 @@ namespace Shadowsocks.Controller.Hotkeys
 
         public static void Destroy()
         {
-            if (_hotKeyManager == null)
-                return;
-            _hotKeyManager.KeyPressed -= HotKeyManagerPressed;
-            _hotKeyManager.Dispose();
-            _hotKeyManager = null;
+            if (_hotKeyManager != null)
+            {
+                _hotKeyManager.KeyPressed -= HotKeyManagerPressed;
+                _hotKeyManager.Dispose();
+                _hotKeyManager = null;
+            }
+            HotkeyCallbacks.Destroy();
+            IshotKeyManagerRunning = false;
         }
 
         private static void HotKeyManagerPressed(object sender, KeyPressedEventArgs e)

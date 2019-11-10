@@ -43,7 +43,9 @@ Show QRCode...=顯示 QR 碼...
 Port settings...=連接埠設置...
 Server statistic...=伺服器連接統計...
 Disconnect current=斷開當前所有連接
+Switch auto close TCP links=切換伺服器前斷開所有連接
 New version {0} {1} available=【點擊下載新版本 {0} {1}】
+New version {0} available=【新版本 {0} 】
 Help=幫助
 Check update=檢查更新
 Show logs...=顯示日誌...
@@ -71,7 +73,9 @@ No Remarks=（無備註節點）
 &Delete=刪除(&D)
 Up=上移
 Down=下移
-
+Version=版本
+Any=任意地址
+Local=本機地址
 New server=未配置的伺服器
 
 Server=伺服器(截圖打碼)
@@ -81,6 +85,7 @@ UDP Port=UDP連接埠
 Password=密碼
 Encryption=加密
 Remarks=備註
+Group=群組名
 
 Adv. Setting=高級選項
 Obfs UDP=混淆UDP協議
@@ -95,8 +100,9 @@ Obfs param=混淆參數
 SSR Link=SSR連結
 Original=原版
 Verify all=校驗所有數據
+Click the 'Link' text box=點擊“SSR鏈接”文本框
 
-Balance=負載均衡
+Enable balance=負載均衡
 OneByOne=按次序
 Random=隨機
 FastDownloadSpeed=下載速度優先
@@ -106,6 +112,8 @@ SelectedFirst=選中優先
 Timer=定時切換
 Balance in group=所選組切換
 AutoBan=自動禁用出錯伺服器
+Logging=日誌記錄
+Enable logging=開啟日誌
 
 Remote proxy=二級（前置）代理
 Proxy On=開啟代理
@@ -114,16 +122,20 @@ Socks5(support UDP)=Socks5(支持UDP)
 Http tunnel=Http隧道
 TCP Port tunnel=TCP連接埠轉發(需要相關混淆插件)
 Username=用戶名
+User Agent=用戶代理
 
 Local proxy=本地代理
 Build-in http proxy=內置http代理(目前有bug)
 Proxy Port=本地連接埠
+Set Default=重置缺省值
+Local Dns=遞歸DNS
 Reconnect Times=重連次數
- Timeout=連接超時
+ConnectTimeout=連接超時
 TTL=空閒斷開秒數
 
 OK=確定
 Cancel=取消
+Apply=應用
 
 # ServerLog Form
 
@@ -161,9 +173,21 @@ Error Percent=出錯比例
 Continuous=連錯
 Version=版本
 
+# Global Log Form
+
+&File=文件(&F)
+Clear &log=清空日誌(&L)
+Show in &Explorer=在資源管理器中顯示(&E)
+&Close=關閉(&C)
+&View=視圖(&V)
+&Font...=字體設置(&F)...
+&Wrap Text=自動換行(&W)
+&Always on top=置於頂層(&A)
+Log Viewer=日誌查看器
+
 # QRCode Form
 
-QRCode=QR 碼
+QRCode=二維碼
 
 # PAC Url Form
 
@@ -206,17 +230,31 @@ Proxy With Rule=規則代理
 # SubscribeForm Form
 
 Subscribe Settings=訂閱設置
+Subscribe Detail=訂閱詳情
 URL=網址
 Group name=組名
 Last Update=最近更新
 Auto update=自動更新
 Auto latency=自動延遲
 Global use proxy=全部通過代理
+Join Update=加入更新
 Use proxy=強制代理
+Dont use proxy=強制不代理
 Try use proxy=嘗試代理
+Sort servers by subscription order=按訂閱順序對伺服器排序
 Updating server subscription.=正在更新伺服器訂閱...
 Add=添加
 Delete=刪除
+Delete(IncludeServers)=刪除（含伺服器）
+every=每
+second(s)=秒
+minute(s)=分鐘
+hour(s)=小時
+day(s)=天
+Update Selected=更新選中
+Update Selected(Use Proxy)=更新選中(通過代理)
+Changes must be applied before execution.=在執行前必須應用變更。
+Close=關閉
 
 # Messages
 
@@ -229,7 +267,9 @@ Password can not be blank=密碼不能為空
 Password are blank=密碼為空
 Port out of range=連接埠超出範圍
 {0} {1} Update Found={0} {1} 更新
-Click menu to download=點擊菜單項下載
+Connecting update server error.=連接更新伺服器錯誤。
+No new version found.=未發現新版本。
+Click to download=點擊下載
 ShadowsocksR is here=ShadowsocksR 在這裡
 You can turn on/off ShadowsocksR in the context menu=可以在右鍵菜單中開關 ShadowsocksR
 System Proxy Enabled=系統代理已啟用
@@ -247,9 +287,14 @@ Failed to update registry=無法修改註冊表
 System Proxy On: =系統代理已啟用：
 Running: Port {0}=正在運行：連接埠 {0}
 Password NOT match=密碼不匹配
+Please add a server subscription and try again.=請添加伺服器訂閱後重試。
 Update subscribe {0} success=伺服器訂閱 {0} 更新成功
 Update subscribe {0} failure=伺服器訂閱 {0} 更新失敗
-Update all subscribe ssuccess=成功更新所有伺服器訂閱
+Update subscribe {0} timeout=伺服器訂閱 {0} 更新超時
+Subscribe {0} repeat=伺服器訂閱 {0} 重复
+Update all subscribe success=成功更新所有伺服器訂閱
+Update selected subscribe success=成功更新選中伺服器訂閱
+Subscribe=伺服器訂閱
 Success=成功
 Register hotkey failed=註冊快速鍵失敗
 Cannot parse hotkey: {0}=剖析快速鍵失敗: {0}
@@ -257,9 +302,16 @@ Share Over LAN=區域網路共用
 On=開啟
 Off=關閉
 Latency test in progress.=延遲測試進行中。
+The Latency test is temporarily disabled by other operations such as updating subscriptions.=延遲測試暫時被其它操作禁用，例如伺服器訂閱更新中或者伺服器編輯中。
 Updating server subscriptions, update latency process after completion.=正在更新伺服器訂閱，完成后將會進行延遲測試。
 All=全部
-Close the server subscription settings window before updating.=更新前需關閉伺服器訂閱設置窗口。
+Close the configuration form before updating.=更新前需關閉伺服器配置窗口。
+There seems to be a problem with the network connection.=網路連接似乎有問題。
+The system time seems to be incorrect.=系統時間似乎不正確。
+Go to the Local Agents area of ​​the Options Settings window to set up an available port for the local port.=請前往“選項設置”窗口的“本地代理”區域為“本地端口”設置一個未佔用端口。
+Subscription did not return a valid server.=訂閱沒有返回有效伺服器。
+Server subscription did not return a valid server.=伺服器訂閱沒有返回有效伺服器。
+Logging is disabled, go to [Option Settings] to enable it.=日誌記錄已關閉，請前往[選項設置]處啟用。
 
 # HotkeySettings Form
 
@@ -272,6 +324,8 @@ Switch To Prev Server=切換上一個伺服器
 Switch To Next Server=切換下一個伺服器
 Reg All=註冊所有快速鍵
 Reg Hotkeys At Startup=啟動時註冊快速鍵
+OK And Enable=確定并啟用
+Disable All=禁用所有
 
 
 Switch System Proxy=切換系統 Proxy 狀態

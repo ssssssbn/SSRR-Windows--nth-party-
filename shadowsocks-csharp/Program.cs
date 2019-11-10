@@ -7,7 +7,7 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 using Shadowsocks.Model;
 using System.Net;
-using Shadowsocks.Controller.Hotkeys;
+using System.Diagnostics;
 #if !_CONSOLE
 using Shadowsocks.View;
 #endif
@@ -18,7 +18,13 @@ namespace Shadowsocks
     {
         private static ShadowsocksController _controller;
 #if !_CONSOLE
-        public static MenuViewController _viewController { get; set; }
+        private static MenuViewController _viewController { get; set; }
+#endif
+        public static bool SystemInFullScreenMode = false;
+        //public static short IsSystemTimeCorrectFlag = -1;
+
+#if DEBUG
+        public static Stopwatch sw = new Stopwatch();
 #endif
         /// <summary>
         /// 应用程序的主入口点。
@@ -26,7 +32,7 @@ namespace Shadowsocks
         [STAThread]
         static void Main(string[] args)
         {
-            //string TheProxyModeInLaunching;
+
             if (Utils.IsVirusExist())
             {
                 return;
@@ -76,28 +82,33 @@ namespace Shadowsocks
                     }
                     try_times += 1;
                 }
-                if (try_times > 0)
-                    Logging.save_to_file = false;
+                //if (try_times > 0)
+                //    Logging.save_to_file = false;
 #endif
-                //#if !DEBUG
-                Logging.OpenLogFile();
-                //#endif
-                _controller = new ShadowsocksController();
-                HostMap.Instance().LoadHostFile();
 
+                Logging.OpenLogFile();
+
+                ServicePointManager.DefaultConnectionLimit = 512;
 #if _DOTNET_4_0
                 // Enable Modern TLS when .NET 4.5+ installed.
                 if (EnvCheck.CheckDotNet45())
-                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
+                    ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12;//(SecurityProtocolType)3072;
+                if (EnvCheck.CheckDotNet471())
+                    ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls13;
 #endif
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
+
+
+                _controller = new ShadowsocksController();
+                HostMap.Instance().LoadHostFile();
+
 #if !_CONSOLE
                 _viewController = new MenuViewController(_controller);
 #endif
-                HotKeys.Init();
                 _controller.Start();
+                SystemEvents.SessionEnding += _viewController.Quit_Click;
 
 #if !_CONSOLE
-                //Util.Utils.ReleaseMemory(true);
 
                 foreach (string arg in args)
                 {
@@ -134,7 +145,7 @@ namespace Shadowsocks
                     Logging.Info("os wake up");
                     if (_controller != null)
                     {
-                        System.Timers.Timer timer = new System.Timers.Timer(5 * 1000);
+                        System.Timers.Timer timer = new System.Timers.Timer(1000.0 * 5);
                         timer.Elapsed += Timer_Elapsed;
                         timer.AutoReset = false;
                         timer.Enabled = true;
@@ -145,6 +156,7 @@ namespace Shadowsocks
                     if (_controller != null)
                     {
                         _controller.Stop();
+                        _viewController.stopTimers();
                         Logging.Info("controller stopped");
                     }
                     Logging.Info("os suspend");
@@ -156,7 +168,11 @@ namespace Shadowsocks
         {
             try
             {
-                if (_controller != null) _controller.Start(false);
+                if (_controller != null)
+                {
+                    _controller.Start(false);
+                    _viewController.initTimers();
+                }
             }
             catch (Exception ex)
             {
@@ -200,6 +216,11 @@ namespace Shadowsocks
         public static ShadowsocksController GetController()
         {
             return _controller;
+        }
+
+        public static MenuViewController GetMenuViewController()
+        {
+            return _viewController;
         }
     }
 }

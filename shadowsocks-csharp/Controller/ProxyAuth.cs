@@ -262,6 +262,8 @@ namespace Shadowsocks.Controller
                         _connection.Send(response);
                         HandshakeReceive2Callback();
                     }
+                    else
+                        Logging.Log(LogLevel.Warn, "Auth incorrect from " + ((IPEndPoint)_connection.RemoteEndPoint).Address.ToString() + "(user:" + user.ToString() + ",pass:" + pass.ToString() + ")");
                 }
                 else
                 {
@@ -533,8 +535,8 @@ namespace Shadowsocks.Controller
             handler.connection = new ProxySocketTunLocal(_connection);
             handler.connectionUDP = _connectionUDP;
             handler.cfg.reconnectTimesRemain = _config.reconnectTimes;
-            handler.cfg.random = _config.random;
-            handler.cfg.forceRandom = _config.random;
+            handler.cfg.random = _config.enableBalance;
+            handler.cfg.forceRandom = _config.enableBalance;
             handler.setServerTransferTotal(_transfer);
             if (_config.proxyEnable)
             {

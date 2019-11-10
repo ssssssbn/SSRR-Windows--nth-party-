@@ -43,7 +43,9 @@ Show QRCode...=显示二维码...
 Port settings...=端口设置...
 Server statistic...=服务器连接统计...
 Disconnect current=断开当前所有连接
+Switch auto close TCP links=切换服务器前断开所有连接
 New version {0} {1} available=【点击下载新版本 {0} {1}】
+New version {0} available=【新版本 {0} 】
 Help=帮助
 Check update=检查更新
 Show logs...=显示日志...
@@ -71,7 +73,9 @@ No Remarks=（无备注节点）
 &Delete=删除(&D)
 Up=上移
 Down=下移
-
+Verion=版本
+Any=任意地址
+Local=本机地址
 New server=未配置的服务器
 
 Server=服务器(截图打码)
@@ -81,6 +85,7 @@ UDP Port=UDP端口
 Password=密码
 Encryption=加密
 Remarks=备注
+Group=群组名
 
 Adv. Setting=高级选项
 Obfs UDP=混淆UDP协议
@@ -95,8 +100,9 @@ Obfs param=混淆参数
 SSR Link=SSR链接
 Original=原版
 Verify all=校验所有数据
+Click the 'Link' text box=点击“SSR链接”文本框
 
-Balance=负载均衡
+Enable balance=负载均衡
 OneByOne=按次序
 Random=随机
 FastDownloadSpeed=下载速度优先
@@ -106,6 +112,8 @@ SelectedFirst=选中优先
 Timer=定时切换
 Balance in group=所选组切换
 AutoBan=自动禁用出错服务器
+Logging=日志记录
+Enable logging=开启日志
 
 Remote proxy=二级（前置）代理
 Proxy On=开启代理
@@ -114,16 +122,20 @@ Socks5(support UDP)=Socks5(支持UDP)
 Http tunnel=Http隧道
 TCP Port tunnel=TCP端口转发(需要相关混淆插件)
 Username=用户名
+User Agent=用户代理
 
 Local proxy=本地代理
 Build-in http proxy=内置http代理(目前有bug)
 Proxy Port=本地端口
+Set Default=重置默认值
+Local Dns=递归DNS
 Reconnect Times=重连次数
- Timeout=连接超时
+ConnectTimeout=连接超时
 TTL=空闲断开秒数
 
 OK=确定
 Cancel=取消
+Apply=应用
 
 # ServerLog Form
 
@@ -218,17 +230,31 @@ Proxy With Rule=规则代理
 # SubscribeForm Form
 
 Subscribe Settings=订阅设置
+Subscribe Detail=订阅详情
 URL=网址
 Group name=组名
 Last Update=最近更新
 Auto update=自动更新
 Auto latency=自动延迟
 Global use proxy=全部通过代理
+Join Update=加入更新
 Use proxy=强制代理
+Dont use proxy=强制不代理
 Try use proxy=尝试代理
+Sort servers by subscription order=按订阅顺序对服务器排序
 Updating server subscription.=正在更新服务器订阅...
 Add=添加
 Delete=删除
+Delete(IncludeServers)=删除（含服务器）
+every=每
+second(s)=秒
+minute(s)=分钟
+hour(s)=小时
+day(s)=天
+Update Selected=更新选中
+Update Selected(Use Proxy)=更新选中(通过代理)
+Changes must be applied before execution.=在执行前必须应用更改。
+Close=关闭
 
 # Messages
 
@@ -241,7 +267,9 @@ Password can not be blank=密码不能为空
 Password are blank=密码为空
 Port out of range=端口超出范围
 {0} {1} Update Found={0} {1} 更新
-Click menu to download=点击菜单项下载
+Connecting update server error.=连接更新服务器错误。
+No new version found.=未发现新版本。
+Click to download=点击下载
 ShadowsocksR is here=ShadowsocksR 在这里
 You can turn on/off ShadowsocksR in the context menu=可以在右键菜单中开关 ShadowsocksR
 System Proxy Enabled=系统代理已启用
@@ -259,9 +287,14 @@ Failed to update registry=无法修改注册表
 System Proxy On: =系统代理已启用：
 Running: Port {0}=正在运行：端口 {0}
 Password NOT match=密码不匹配
+Please add a server subscription and try again.=请添加服务器订阅后重试。
 Update subscribe {0} success=服务器订阅 {0} 更新成功
 Update subscribe {0} failure=服务器订阅 {0} 更新失败
-Update all subscribe ssuccess=成功更新所有服务器订阅
+Update subscribe {0} timeout=服务器订阅 {0} 更新超时
+Subscribe {0} repeat=服务器订阅 {0} 重复
+Update all subscribe success=成功更新所有服务器订阅
+Update selected subscribe success=成功更新选中服务器订阅
+Subscribe=服务器订阅
 Success=成功
 Register hotkey failed=注册快捷键失败
 Cannot parse hotkey: {0}=解析快捷键失败: {0}
@@ -269,9 +302,14 @@ Share Over LAN=局域网共享
 On=开启
 Off=关闭
 Latency test in progress.=延迟测试进行中。
-Updating server subscriptions, update latency process after completion.=正在更新服务器订阅，完成后将会进行延迟测试。
+The Latency test is temporarily disabled by other operations such as updating subscriptions.=延迟测试暂时被其他操作禁用，例如服务器订阅更新中或服务器编辑中。
 All=全部
-Close the server subscription settings window before updating.=更新前需关闭服务器订阅设置窗口。
+Close the configuration form before updating.=更新前需关闭服务器配置窗口。
+There seems to be a problem with the network connection.=网络连接似乎有问题。
+The system time seems to be incorrect.=系统时间似乎不正确。
+Go to the Local Agents area of ​​the Options Settings window to set up an available port for the local port.=请前往“选项设置”窗口的“本地代理”区域为“本地端口”设置一个未占用端口。
+Server subscription did not return a valid server.=服务器订阅没有返回有效服务器。
+Logging is disabled, go to [Option Settings] to enable it.=日志记录已关闭，请前往[选项设置]处启用。
 
 # HotkeySettings Form
 
@@ -284,6 +322,8 @@ Switch To Prev Server=切换上个服务器
 Switch To Next Server=切换下个服务器
 Reg All=注册全部快捷键
 Reg Hotkeys At Startup=启动时注册快捷键
+OK And Enable=确定并启用
+Disable All=禁用所有
 
 
 Switch System Proxy=切换系统代理状态

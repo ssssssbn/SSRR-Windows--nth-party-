@@ -39,8 +39,9 @@
             this.fontToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.wrapTextToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.alwaysOnTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.logTextBox = new System.Windows.Forms.TextBox();
+            this.tbLog = new System.Windows.Forms.TextBox();
             this.refreshTimer = new System.Windows.Forms.Timer(this.components);
+            this.btnClose = new System.Windows.Forms.Button();
             this.logMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -51,7 +52,7 @@
             this.viewToolStripMenuItem});
             this.logMenu.Location = new System.Drawing.Point(0, 0);
             this.logMenu.Name = "logMenu";
-            this.logMenu.Size = new System.Drawing.Size(986, 25);
+            this.logMenu.Size = new System.Drawing.Size(984, 24);
             this.logMenu.TabIndex = 0;
             this.logMenu.Text = "menuStrip1";
             // 
@@ -63,32 +64,32 @@
             this.toolStripSeparator1,
             this.closeToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(39, 21);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
             // 
             // clearLogToolStripMenuItem
             // 
             this.clearLogToolStripMenuItem.Name = "clearLogToolStripMenuItem";
-            this.clearLogToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.clearLogToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
             this.clearLogToolStripMenuItem.Text = "Clear &log";
             this.clearLogToolStripMenuItem.Click += new System.EventHandler(this.clearLogToolStripMenuItem_Click);
             // 
             // showInExplorerToolStripMenuItem
             // 
             this.showInExplorerToolStripMenuItem.Name = "showInExplorerToolStripMenuItem";
-            this.showInExplorerToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.showInExplorerToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
             this.showInExplorerToolStripMenuItem.Text = "Show in &Explorer";
             this.showInExplorerToolStripMenuItem.Click += new System.EventHandler(this.showInExplorerToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(171, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(158, 6);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
             this.closeToolStripMenuItem.Text = "&Close";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
@@ -99,20 +100,20 @@
             this.wrapTextToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(47, 21);
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "&View";
             // 
             // fontToolStripMenuItem
             // 
             this.fontToolStripMenuItem.Name = "fontToolStripMenuItem";
-            this.fontToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
+            this.fontToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.fontToolStripMenuItem.Text = "&Font";
             this.fontToolStripMenuItem.Click += new System.EventHandler(this.fontToolStripMenuItem_Click);
             // 
             // wrapTextToolStripMenuItem
             // 
             this.wrapTextToolStripMenuItem.Name = "wrapTextToolStripMenuItem";
-            this.wrapTextToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
+            this.wrapTextToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.wrapTextToolStripMenuItem.Text = "&Wrap text";
             this.wrapTextToolStripMenuItem.CheckedChanged += new System.EventHandler(this.wrapTextToolStripMenuItem_CheckedChanged);
             this.wrapTextToolStripMenuItem.Click += new System.EventHandler(this.wrapTextToolStripMenuItem_Click);
@@ -120,42 +121,57 @@
             // alwaysOnTopToolStripMenuItem
             // 
             this.alwaysOnTopToolStripMenuItem.Name = "alwaysOnTopToolStripMenuItem";
-            this.alwaysOnTopToolStripMenuItem.Size = new System.Drawing.Size(158, 22);
+            this.alwaysOnTopToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.alwaysOnTopToolStripMenuItem.Text = "&Always on top";
             this.alwaysOnTopToolStripMenuItem.CheckedChanged += new System.EventHandler(this.alwaysOnTopToolStripMenuItem_CheckedChanged);
             this.alwaysOnTopToolStripMenuItem.Click += new System.EventHandler(this.alwaysOnTopToolStripMenuItem_Click);
             // 
-            // logTextBox
+            // tbLog
             // 
-            this.logTextBox.BackColor = System.Drawing.Color.Black;
-            this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logTextBox.Font = new System.Drawing.Font("Courier New", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.logTextBox.ForeColor = System.Drawing.Color.White;
-            this.logTextBox.Location = new System.Drawing.Point(0, 25);
-            this.logTextBox.MaxLength = 2147483647;
-            this.logTextBox.Multiline = true;
-            this.logTextBox.Name = "logTextBox";
-            this.logTextBox.ReadOnly = true;
-            this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.logTextBox.Size = new System.Drawing.Size(986, 411);
-            this.logTextBox.TabIndex = 1;
-            this.logTextBox.WordWrap = false;
+            this.tbLog.BackColor = System.Drawing.Color.Black;
+            this.tbLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbLog.Font = new System.Drawing.Font("Courier New", 10.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbLog.ForeColor = System.Drawing.Color.White;
+            this.tbLog.Location = new System.Drawing.Point(0, 24);
+            this.tbLog.Margin = new System.Windows.Forms.Padding(0);
+            this.tbLog.MaxLength = 2147483647;
+            this.tbLog.Multiline = true;
+            this.tbLog.Name = "tbLog";
+            this.tbLog.ReadOnly = true;
+            this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.tbLog.Size = new System.Drawing.Size(984, 501);
+            this.tbLog.TabIndex = 1;
+            this.tbLog.WordWrap = false;
             // 
             // refreshTimer
             // 
-            this.refreshTimer.Enabled = true;
             this.refreshTimer.Tick += new System.EventHandler(this.refreshTimer_Tick);
+            // 
+            // btnClose
+            // 
+            this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnClose.Location = new System.Drawing.Point(0, 0);
+            this.btnClose.Margin = new System.Windows.Forms.Padding(0);
+            this.btnClose.Name = "btnClose";
+            this.btnClose.Size = new System.Drawing.Size(0, 0);
+            this.btnClose.TabIndex = 999;
+            this.btnClose.Text = "Close";
+            this.btnClose.UseVisualStyleBackColor = true;
+            this.btnClose.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
             // LogForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(986, 436);
-            this.Controls.Add(this.logTextBox);
+            this.CancelButton = this.btnClose;
+            this.ClientSize = new System.Drawing.Size(984, 525);
+            this.Controls.Add(this.btnClose);
+            this.Controls.Add(this.tbLog);
             this.Controls.Add(this.logMenu);
             this.Name = "LogForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Log Viewer";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LogForm_FormClosing);
             this.Load += new System.EventHandler(this.LogForm_Load);
             this.Shown += new System.EventHandler(this.LogForm_Shown);
             this.logMenu.ResumeLayout(false);
@@ -176,8 +192,9 @@
         private System.Windows.Forms.ToolStripMenuItem fontToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem wrapTextToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem alwaysOnTopToolStripMenuItem;
-        private System.Windows.Forms.TextBox logTextBox;
+        private System.Windows.Forms.TextBox tbLog;
         private System.Windows.Forms.ToolStripMenuItem clearLogToolStripMenuItem;
         private System.Windows.Forms.Timer refreshTimer;
+        private System.Windows.Forms.Button btnClose;
     }
 }

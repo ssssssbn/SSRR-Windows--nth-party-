@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Net.Sockets;
 using System.Net;
+using Shadowsocks.Controller.Hotkeys;
+using Shadowsocks.Util;
 
 namespace Shadowsocks.Controller
 {
@@ -37,6 +39,8 @@ namespace Shadowsocks.Controller
         private bool stopped = false;
         private bool firstRun = true;
 
+        //private System.Timers.Timer timerUpdateLatency;
+
 
         public class PathEventArgs : EventArgs
         {
@@ -49,8 +53,7 @@ namespace Shadowsocks.Controller
         //public event EventHandler ShareOverLANStatusChanged;
         public event EventHandler ShowConfigFormEvent;
 
-        public event EventHandler RefreshIndexInConfigFormFromServerLogForm;
-
+        public event EventHandler UpdateNodeFromSubscribeForm;
 
         // when user clicked Edit PAC, and PAC file has already created
         public event EventHandler<PathEventArgs> PACFileReadyToOpen;
@@ -63,13 +66,13 @@ namespace Shadowsocks.Controller
         public event ErrorEventHandler Errored;
 
         public static Configuration tmpconfig;
-        
+
         public ShadowsocksController()
         {
             _config = Configuration.Load();
             _transfer = ServerTransferTotal.Load();
 
-            foreach (Server server in _config.configs)
+            foreach (Server server in _config.Servers)
             {
                 if (_transfer.servers.ContainsKey(server.server))
                 {
@@ -82,16 +85,12 @@ namespace Shadowsocks.Controller
         public void Start(bool regHotkeys = true)
         {
             Reload();
-            if (regHotkeys)
+            if (regHotkeys && _config.hotkey.RegHotkeysAtStartup)
             {
+                HotKeys.Init();
                 HotkeyReg.RegAllHotkeys();
             }
         }
-
-        //public void Start()
-        //{
-        //    Reload();
-        //}
 
         protected void ReportError(Exception e)
         {
@@ -106,21 +105,6 @@ namespace Shadowsocks.Controller
             {
                 _rangeSet.Reverse();
             }
-        }
-
-        // always return copy
-        public Configuration GetConfiguration()
-        {
-            return Configuration.Load();
-        }
-
-        public void SyncConfigFormServerLogForm(Configuration config)
-        {
-            _config.ServerLogFormLocation = config.ServerLogFormLocation;
-            _config.IsServerLogFormTopmost = config.IsServerLogFormTopmost;
-            for (int i = 0; i < _config.configs.Count; i++)
-                _config.configs[i].latency = config.configs[i].latency;
-            SaveConfig(_config, false);
         }
 
         public Configuration GetCurrentConfiguration()
@@ -146,54 +130,17 @@ namespace Shadowsocks.Controller
             {
                 for (int j = 0; j < servers.Count; ++j)
                 {
-                    if (FindFirstMatchServer(servers[j], mergeConfig.configs) == -1)
+                    if (FindFirstMatchServer(servers[j], mergeConfig.Servers) == -1)
                     {
-                        mergeConfig.configs.Add(servers[j]);
+                        mergeConfig.Servers.Add(servers[j]);
                     }
                 }
             }
-        }
-
-        public List<Server> MergeConfiguration(Configuration mergeConfig, List<Server> servers)
-        {
-            List<Server> missingServers = new List<Server>();
-            if (servers != null)
-            {
-                for (int j = 0; j < servers.Count; ++j)
-                {
-                    int i = FindFirstMatchServer(servers[j], mergeConfig.configs);
-                    if (i != -1)
-                    {
-                        bool enable = servers[j].enable;
-                        servers[j].CopyServer(mergeConfig.configs[i]);
-                        servers[j].enable = enable;
-                    }
-                }
-            }
-            for (int i = 0; i < mergeConfig.configs.Count; ++i)
-            {
-                int j = FindFirstMatchServer(mergeConfig.configs[i], servers);
-                if (j == -1)
-                {
-                    missingServers.Add(mergeConfig.configs[i]);
-                }
-            }
-            return missingServers;
-        }
-
-        public Configuration MergeGetConfiguration(Configuration mergeConfig)
-        {
-            Configuration ret = Configuration.Load();
-            if (mergeConfig != null)
-            {
-                MergeConfiguration(mergeConfig, ret.configs);
-            }
-            return ret;
         }
 
         public void MergeConfiguration(Configuration mergeConfig)
         {
-            AppendConfiguration(_config, mergeConfig.configs);
+            AppendConfiguration(_config, mergeConfig.Servers);
             SaveConfig(_config);
         }
 
@@ -210,120 +157,65 @@ namespace Shadowsocks.Controller
 
         public void SaveServersConfig(Configuration config, bool reload = true)
         {
-            List<Server> missingServers = MergeConfiguration(_config, config.configs);
             _config.CopyFrom(config);
-            foreach (Server s in missingServers)
-            {
-                s.GetConnections().CloseAll();
-            }
             SelectServerIndex(_config.index, reload);
         }
 
-        public void SaveSubscribeConfig(Configuration config, bool reload = true)
+        public void SavePortConfig(Dictionary<string, PortMapConfig> portmap)
         {
-            _config.nodeFeedAutoUpdate = config.nodeFeedAutoUpdate;
-            _config.nodeFeedAutoLatency = config.nodeFeedAutoLatency;
-            _config.nodeFeedAutoUpdateUseProxy = config.nodeFeedAutoUpdateUseProxy;
-            _config.nodeFeedAutoUpdateTryUseProxy = config.nodeFeedAutoUpdateTryUseProxy;
-            _config.serverSubscribes = config.serverSubscribes;
-            SelectServerIndex(_config.index, reload);
+            _config.portMap = portmap;
+            SaveConfig(_config);
         }
 
-        public void SaveServersPortMap(Configuration config)
+        public int AddServer(Server s, string currentEditServerID = null, bool reload = true)
         {
-            _config.portMap = config.portMap;
-            SelectServerIndex(_config.index);
-            _config.FlushPortMapCache();
-        }
-
-        public bool IsServerExisting(string ssURL)
-        {
-            if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase) || ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                try
+                string currentserverid = _config.Servers[_config.index].id;
+                int index = -1;
+                if (!String.IsNullOrEmpty(currentEditServerID))
                 {
-                    var server = new Server(ssURL, null);
-                    for (int i = 0; i < _config.configs.Count; i++)
-                        if (server.server == _config.configs[i].server && server.server_port == _config.configs[i].server_port && server.group == _config.configs[i].group) 
-                        return true;
+                    index = _config.Servers.FindIndex(t => t.id == currentEditServerID);
                 }
-                catch (Exception e)
-                {
-                    Logging.LogUsefulException(e);
-                    return true;
-                }
-            }
-            return false;
-        }
+                index++;
+                _config.Servers.Insert(index, s);
 
-        public bool AddServerBySSURL(string ssURL, string force_group = null, bool toLast = false)
-        {
-            if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase) || ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
-            {
-                try
+                if (index > -1 && index <= _config.index)
                 {
-                    var server = new Server(ssURL, force_group);
-                    //if (IsServerExisting(server))
-                    //    return true;
-                    if (toLast)
-                    {
-                        _config.configs.Add(server);
-                    }
+                    int newindex = _config.Servers.FindIndex(t => t.id == currentserverid);
+                    if (newindex != -1 || (newindex = _config.Servers.FindIndex(t => t.enable)) != -1)
+                        _config.index = newindex;
                     else
-                    {
-                        int index = _config.index + 1;
-                        if (index < 0 || index > _config.configs.Count)
-                            index = _config.configs.Count;
-                        _config.configs.Insert(index, server);
-                    }
+                        _config.index = 0;
+                }
+                if (reload)
                     SaveConfig(_config);
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    Logging.LogUsefulException(e);
-                    return false;
-                }
+                return index;
             }
-            else
+            catch (Exception e)
             {
-                return false;
+                Logging.LogUsefulException(e);
             }
+            return -1;
         }
-
-        //public void ToggleEnable(bool enabled)
-        //{
-        //    _config.enabled = enabled;
-        //    SaveConfig(_config);
-        //    if (EnableStatusChanged != null)
-        //    {
-        //        EnableStatusChanged(this, new EventArgs());
-        //    }
-        //}
 
         public void ToggleMode(ProxyMode mode)
         {
             _config.sysProxyMode = (int)mode;
             SaveConfig(_config);
-            if (ToggleModeChanged != null)
-            {
-                ToggleModeChanged(this, new EventArgs());
-            }
+            ToggleModeChanged?.Invoke(this, new EventArgs());
         }
 
         public void ToggleRuleMode(int mode)
         {
             _config.proxyRuleMode = mode;
             SaveConfig(_config);
-            if (ToggleRuleModeChanged != null)
-            {
-                ToggleRuleModeChanged(this, new EventArgs());
-            }
+            ToggleRuleModeChanged?.Invoke(this, new EventArgs());
         }
 
-        public void ToggleSelectRandom(bool enabled)
+        public void ToggleEnableBalance(bool enabled)
         {
-            _config.random = enabled;
+            _config.enableBalance = enabled;
             SaveConfig(_config);
         }
 
@@ -381,7 +273,7 @@ namespace Shadowsocks.Controller
         public void ClearTransferTotal(string server_addr)
         {
             _transfer.Clear(server_addr);
-            foreach (Server server in _config.configs)
+            foreach (Server server in _config.Servers)
             {
                 if (server.server == server_addr)
                 {
@@ -411,24 +303,24 @@ namespace Shadowsocks.Controller
             }
         }
 
-        public void UpdatePACFromGFWList()
+        public void UpdatePACTo(GFWListUpdater.Templates templates)
         {
             if (gfwListUpdater != null)
             {
-                gfwListUpdater.UpdatePACFromGFWList(_config);
-            }
-        }
-
-        public void UpdatePACFromOnlinePac(string url)
-        {
-            if (gfwListUpdater != null)
-            {
-                gfwListUpdater.UpdatePACFromGFWList(_config, url);
+                gfwListUpdater.UpdatePACTo(_config, templates);
             }
         }
 
         protected void Reload()
         {
+            if (_config.enableLogging)
+            {
+                Logging.OpenLogFile();
+            }
+            else
+            {
+                Logging.CloseLogFile();
+            }
             if (_port_map_listener != null)
             {
                 foreach (Listener l in _port_map_listener)
@@ -438,7 +330,6 @@ namespace Shadowsocks.Controller
                 _port_map_listener = null;
             }
             // some logic in configuration updated the config when saving, we need to read it again
-            _config = MergeGetConfiguration(_config);
             _config.FlushPortMapCache();
             ReloadIPRange();
 
@@ -469,10 +360,10 @@ namespace Shadowsocks.Controller
             // or bind will fail when switching bind address from 0.0.0.0 to 127.0.0.1
             // though UseShellExecute is set to true now
             // http://stackoverflow.com/questions/10235093/socket-doesnt-close-after-application-exits-if-a-launched-process-is-open
-            bool _firstRun = firstRun;
+            //bool _firstRun = firstRun;
             for (int i = 1; i <= 5; ++i)
             {
-                _firstRun = false;
+                //_firstRun = false;
                 try
                 {
                     if (_listener != null && !_listener.isConfigChange(_config))
@@ -528,7 +419,7 @@ namespace Shadowsocks.Controller
                         }
                     }
                     Logging.LogUsefulException(e);
-                    if (!_firstRun)
+                    if (firstRun)
                     {
                         ReportError(e);
                         break;
@@ -574,10 +465,13 @@ namespace Shadowsocks.Controller
                 }
             }
 
-            ConfigChanged?.Invoke(this, new EventArgs());
+            //ConfigChanged?.Invoke(this, new EventArgs());
+            if (!firstRun)
+                InvokeConfigChanged(new object[] { new List<string>() { "All" } }, new EventArgs());
 
             UpdateSystemProxy();
             Util.Utils.ReleaseMemory(true);
+            firstRun = false;
         }
 
 
@@ -629,33 +523,43 @@ namespace Shadowsocks.Controller
             //}
         }
 
+        /// <summary>
+        /// Disconnect all connections from the remote host.
+        /// </summary>
+        public void DisconnectAllConnections()
+        {
+            List<Server> AllServers = GetCurrentConfiguration().Servers;
+            foreach(Server s in AllServers)
+            {
+                s.GetConnections().CloseAll();
+            }
+        }
+        
+
         public void SaveHotkeyConfig(HotkeyConfig newConfig)
         {
             _config.hotkey = newConfig;
             SaveConfig(_config, false);
-            ConfigChanged?.Invoke(this, new EventArgs());
+            //ConfigChanged?.Invoke(this, new EventArgs());
+            InvokeConfigChanged(new object[] { new List<string>() { "HotkeySettingsForm" } }, new EventArgs());
         }
 
         public void SaveTimerUpdateLatency()
         {
+            _config.LastnodeFeedAutoLatency = (UInt64)Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds);
             SaveConfig(_config, false);
+            InvokeConfigChanged(new object[] { new List<string>() { "MenuViewController" } }, new EventArgs());
         }
 
-        public void InvokeRefreshIndexInConfigFormFromServerLogForm()
+        public void InvokeUpdateNodeFromSubscribeForm(object obj, EventArgs e)
         {
-            RefreshIndexInConfigFormFromServerLogForm?.Invoke(this, new EventArgs());
+            UpdateNodeFromSubscribeForm?.Invoke(obj, e);
         }
 
-        //public void SaveServerLogFormTopmost(bool enable)
-        //{
-        //    _config.IsServerLogFormTopmost = enable;
-        //    SaveConfig(_config);
-        //}
+        public void InvokeConfigChanged(object sender,EventArgs e)
+        {
+            ConfigChanged?.Invoke(sender, e);
+        }
 
-        //public void SaveServerLogFormLocation(FormLocation point)
-        //{
-        //    _config.ServerLogFormLocation = point;
-        //    SaveConfig(_config);
-        //}
     }
 }

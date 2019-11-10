@@ -19,7 +19,7 @@ namespace Shadowsocks.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -70,7 +70,7 @@ namespace Shadowsocks.Properties {
         ///Mode=系统代理模式
         ///No modify system proxy=保持当前状态不修改
         ///Disable system proxy=直连模式
-        ///PAC=PAC 模式
+        ///PAC=PAC模式
         ///Global=全局模式
         ///Proxy rule=代理规则
         ///Bypass LAN=绕过局域网
@@ -79,11 +79,12 @@ namespace Shadowsocks.Properties {
         ///User custom=用户自定义
         ///Disable bypass=全局
         ///Servers=服务器
+        ///(empty group)=未分组
         ///Edit servers...=编辑服务器...
         ///Import from file...=从json文件导入...
         ///Import from clipboard SSR links...=从剪贴板SSR链接导入...
         ///Import from screen QRCode...=从屏幕二维码导入...
-        ///Servers Subscribe=服务器订 [rest of string was truncated]&quot;;.
+        ///Servers  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string cn {
             get {
@@ -228,7 +229,7 @@ namespace Shadowsocks.Properties {
         ///Mode=系統代理模式
         ///No modify system proxy=保持當前狀態不修改
         ///Disable system proxy=直連模式
-        ///PAC=PAC 模式
+        ///PAC=PAC模式
         ///Global=全局模式
         ///Proxy rule=代理規則
         ///Bypass LAN=繞過區域網路
@@ -237,11 +238,12 @@ namespace Shadowsocks.Properties {
         ///User custom=用戶自定義
         ///Disable bypass=全局
         ///Servers=伺服器
+        ///(empty group)=未分组
         ///Edit servers...=編輯伺服器...
         ///Import from file...=從json文件導入...
         ///Import from clipboard SSR links...=从剪貼板SSR連結導入...
         ///Import from screen QRCode...=从熒幕 QR 碼導入...
-        ///Servers Subscrib [rest of string was truncated]&quot;;.
+        ///Se [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string zh_tw {
             get {

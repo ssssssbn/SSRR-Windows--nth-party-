@@ -10,7 +10,7 @@ using ZXing.QrCode.Internal;
 
 namespace Shadowsocks.View
 {
-    public partial class ShowTextForm : Form
+    public sealed partial class ShowTextForm : Form
     {
         public ShowTextForm(string title, string text)
         {
@@ -19,6 +19,8 @@ namespace Shadowsocks.View
 
             this.Text = title;
             PictureQRcode.Height = this.ClientSize.Height - textBox.Height;
+
+            GenQR(string.IsNullOrEmpty(text) ? string.Empty : text);
             textBox.Text = text;
         }
 
