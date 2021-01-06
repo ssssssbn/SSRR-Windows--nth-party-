@@ -1,4 +1,4 @@
-ShadowsocksR for Windows
+(Deprecated)ShadowsocksR for Windows
 =======================
 
 基于[SSRR-CGDF](https://github.com/CGDF-Github/SSRR-Windows)5.1.6（实为5.1.5版本，5.1.6是CGDF迁移代码用来区分的）乱做了修改。
