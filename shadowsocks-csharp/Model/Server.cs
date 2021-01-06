@@ -349,17 +349,17 @@ namespace Shadowsocks.Model
             this.id = BitConverter.ToString(id).Replace("-", "");
         }
 
-        public Server(string ssURL, string force_group) : this()
+        public Server(string Link, string force_group) : this()
         {
             try
             {
-                if (ssURL.StartsWith("ss://", StringComparison.OrdinalIgnoreCase))
+                if (Link.StartsWith("ss://", StringComparison.OrdinalIgnoreCase))
                 {
-                    ServerFromSS(ssURL, force_group);
+                    ServerFromSS(Link, force_group);
                 }
-                else if (ssURL.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
+                else if (Link.StartsWith("ssr://", StringComparison.OrdinalIgnoreCase))
                 {
-                    ServerFromSSR(ssURL, force_group);
+                    ServerFromSSR(Link, force_group);
                 }
                 else
                 {
@@ -370,6 +370,7 @@ namespace Shadowsocks.Model
             {
                 enable = false;
                 group = "Invalid link format";
+                remarks = Link;
             }
         }
 
@@ -673,18 +674,18 @@ namespace Shadowsocks.Model
 
         public void tcpingLatency()
         {
-            
+            latency = LATENCY_PENDING;
+            if (!enable)
+                return;
             double latencies = -1;
             TcpClient sock = null;
             Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
             try
             {
                 Dns.GetHostAddresses(server);
             }
             catch (Exception)
             {
-                stopwatch.Stop();
                 latency = LATENCY_ERROR;
                 return;
             }
@@ -694,6 +695,7 @@ namespace Shadowsocks.Model
             else
                 sock = new TcpClient(AddressFamily.InterNetwork);
 
+            stopwatch.Start();
             try
             {
                 var result = sock.BeginConnect(server, server_port, null, null);
@@ -709,7 +711,10 @@ namespace Shadowsocks.Model
             finally
             {
                 stopwatch.Stop();
+                stopwatch = null;
                 sock.Close();
+                sock.Dispose();
+                sock = null;
             }
 
             if (0 < latencies)
@@ -724,6 +729,7 @@ namespace Shadowsocks.Model
             {
                 latency = LATENCY_ERROR;
             }
+            
         }
     }
 }

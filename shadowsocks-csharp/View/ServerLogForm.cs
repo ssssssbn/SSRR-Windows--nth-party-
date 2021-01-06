@@ -896,8 +896,9 @@ namespace Shadowsocks.View
                 Configuration config = controller.GetCurrentConfiguration();
                 if (columnName == "Server")
                 {
+                    Disconnect_Click(null, null);
+                    //controller.DisconnectAllConnections();
                     controller.SelectServerIndex(id);
-                    controller.DisconnectAllConnections();
                 }
                 // AvgConnectTime
                 else if (columnName == "AvgLatency")
@@ -909,10 +910,7 @@ namespace Shadowsocks.View
                         Server server = config.Servers[i];
                         if (GroupName == server.group)
                         {
-                            if (server.enable)
-                                tmplist.Add(server.id);
-                            else
-                                server.latency = -1;
+                            tmplist.Add(server.id);
                         }
                     }
                     Util.TCPingManager.StartTcping(controller, tmplist);
@@ -934,12 +932,12 @@ namespace Shadowsocks.View
                     {
                         mtimerDataGridServerCellClick = new MyTimer(200);
                         mtimerDataGridServerCellClick.AutoReset = false;
-                        mtimerDataGridServerCellClick.Elapsed -= DataGridServer_CellClick;
+                        //mtimerDataGridServerCellClick.Elapsed -= DataGridServer_CellClick;
                         mtimerDataGridServerCellClick.Elapsed += DataGridServer_CellClick;
                     }
-                    mtimerDataGridServerCellClick.obj = new object[] { id };
                     if (mtimerDataGridServerCellClick.Enabled)
                         mtimerDataGridServerCellClick.Stop();
+                    mtimerDataGridServerCellClick.obj = new object[] { id };
                     mtimerDataGridServerCellClick.Start();
 
                 }
@@ -996,16 +994,24 @@ namespace Shadowsocks.View
         /// </summary>
         public void DataGridServer_CellClick(object sender, EventArgs e)
         {
-            if (this.InvokeRequired)
+            try
             {
-                AddItemDelegate m_SetProgressProxy = new AddItemDelegate(DataGridServer_CellClick);
-                this.Invoke(m_SetProgressProxy, sender, e);
+                if (this.InvokeRequired)
+                {
+                    AddItemDelegate m_SetProgressProxy = new AddItemDelegate(DataGridServer_CellClick);
+                    this.Invoke(m_SetProgressProxy, sender, e);
+                }
+                else
+                {
+                    object[] obj = ((MyTimer)sender).obj;
+                    //controller.DisconnectAllConnections();
+                    Disconnect_Click(null, null);
+                    controller.SelectServerIndex((int)obj[0]);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                object[] obj = ((MyTimer)sender).obj;
-                controller.SelectServerIndex((int)obj[0]);
-                Disconnect_Click(null, null);
+                Logging.LogUsefulException(ex);
             }
         }
 
@@ -1071,9 +1077,9 @@ namespace Shadowsocks.View
             {
                 config.IsServerLogFormTopmost = this.TopMost;
             }
-            for (int i = 0; i < ServerSpeedLogList.Length; i++)
-                if (ServerSpeedLogList[i].avgConnectTime > 0)
-                    config.Servers[i].latency = (int)ServerSpeedLogList[i].avgConnectTime / 1000;
+            //for (int i = 0; i < ServerSpeedLogList.Length; i++)
+            //    if (ServerSpeedLogList[i].avgConnectTime > 0)
+            //        config.Servers[i].latency = (int)ServerSpeedLogList[i].avgConnectTime / 1000;
             Configuration.Save(config);
 
             controller.ConfigChanged -= controller_ConfigChanged;

@@ -1019,9 +1019,16 @@ namespace Shadowsocks.View
                 {
                     if (String.IsNullOrEmpty(tBGroup.Text))
                     {
-                        tBGroup.Text = readonlySubscribe.Group;
-                        ss.Group = readonlySubscribe.Group;
-                        ss.groupUserDefine = readonlySubscribe.groupUserDefine;
+                        if (readonlySubscribe.groupUserDefine) 
+                        {
+                            ss.groupUserDefine = false;
+                        }
+                        else
+                        {
+                            tBGroup.Text = readonlySubscribe.Group;
+                            ss.Group = readonlySubscribe.Group;
+                            ss.groupUserDefine = readonlySubscribe.groupUserDefine;
+                        }
                     }
                     else
                     {

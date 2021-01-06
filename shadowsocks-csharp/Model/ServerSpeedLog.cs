@@ -77,8 +77,6 @@ namespace Shadowsocks.Model
 
         private const int avgTime = 5; 
 
-        public ServerTransferTotal transfer;
-
         public ServerSpeedLog()
         {
 

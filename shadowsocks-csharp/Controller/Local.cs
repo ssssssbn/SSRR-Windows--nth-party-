@@ -782,7 +782,7 @@ namespace Shadowsocks.Controller
                     }
                 }
 
-                if (!reconnect)
+                if (!reconnect && cfg != null)
                 {
                     Logging.Info($"Disconnect {cfg.targetHost}:{cfg.targetPort.ToString()}");
                     CloseSocket(ref connection);

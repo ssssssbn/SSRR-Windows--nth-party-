@@ -155,18 +155,18 @@ namespace Shadowsocks.View {
                 if (!timerCheckUpdate.Enabled)
                 {
                     double timenow = Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds);
-                    double timeLastUpdateSubscribes = _controller.GetCurrentConfiguration().LastUpdateSubscribesTime;
-                    double timespan = Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds) - _controller.GetCurrentConfiguration().LastUpdateSubscribesTime;
-                    
-                    if (timenow> timeLastUpdateSubscribes && timespan > timerCheckSubscriptionsUpdateInterval)
-                        timerCheckUpdate.Interval = 1000.0 * 10;
-                    else
+                    double timeLast = _controller.GetCurrentConfiguration().LastUpdateSubscribesTime;
+                    double timespan = timenow - timeLast;
+
+                    if(timenow > timeLast)
                     {
-                        if (timenow > timeLastUpdateSubscribes)
-                            timerCheckUpdate.Interval = 1000.0 * (timerCheckSubscriptionsUpdateInterval - timespan);
+                        if (timespan > timerCheckSubscriptionsUpdateInterval)
+                            timerCheckUpdate.Interval = 1000.0 * 10;
                         else
-                            timerCheckUpdate.Interval = 1000.0 * timerCheckSubscriptionsUpdateInterval;
+                            timerCheckUpdate.Interval = 1000.0 * (timerCheckSubscriptionsUpdateInterval - timespan);
                     }
+                    else
+                        timerCheckUpdate.Interval = 1000.0 * timerCheckSubscriptionsUpdateInterval;
                     Logging.Debug("timerCheckUpdate started");
                     timerCheckUpdate.Start();
 
@@ -174,11 +174,18 @@ namespace Shadowsocks.View {
                     {
                         if (!timerUpdateLatency.Enabled)
                         {
-                            timespan = Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds) - _controller.GetCurrentConfiguration().LastnodeFeedAutoLatency;
-                            if (timespan > timerUpdateLatencyInterval)
-                                timerUpdateLatency.Interval = 1000.0 * 10;
+                            timeLast = _controller.GetCurrentConfiguration().LastnodeFeedAutoLatency;
+                            timespan = timenow - timeLast;
+                            if (timenow > timeLast)
+                            {
+                                if (timespan > timerUpdateLatencyInterval)
+                                    timerUpdateLatency.Interval = 1000.0 * 10;
+                                else
+                                    timerUpdateLatency.Interval = 1000.0 * (timerUpdateLatencyInterval - timespan);
+                            }
                             else
-                                timerUpdateLatency.Interval = 1000.0 * (timerUpdateLatencyInterval - timespan);
+                                timerCheckUpdate.Interval = 1000.0 * timerUpdateLatencyInterval;
+
                             Logging.Debug("timerUpdateLatency started");
                             timerUpdateLatency.Start();
                         }
@@ -244,6 +251,11 @@ namespace Shadowsocks.View {
                 }
 
                 Configuration cfg = _controller.GetCurrentConfiguration();
+                double timenow = Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds);
+                double timeLast = cfg.LastUpdateSubscribesTime;
+                if (timenow <= timeLast)
+                    return;
+
                 if (Utils.IsConnectionAvailable()) 
                 {
                     if (cfg.serverSubscribes.Count > 0)
@@ -308,6 +320,10 @@ namespace Shadowsocks.View {
             Configuration config = _controller.GetCurrentConfiguration();
             try
             {
+                double timenow = Math.Floor(DateTime.Now.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds);
+                double timeLast = config.LastnodeFeedAutoLatency;
+                if (timenow <= timeLast)
+                    return;
                 //while (Program.IsSystemTimeCorrectFlag == -1)
                 //{
                 //    Thread.Sleep(100);
@@ -319,14 +335,7 @@ namespace Shadowsocks.View {
                 List<string> tcpinglist = new List<string>();
                 for (int i = 0; i < serverscount; i++)
                 {
-                    Server server = config.Servers[i];
-                    if (!server.enable)
-                    {
-                        server.latency = -1;
-                        continue;
-                    }
-
-                    tcpinglist.Add(server.id);
+                    tcpinglist.Add(config.Servers[i].id);
                 }
                 Logging.Debug("trigger auto latency");
                 Util.TCPingManager.StartTcping(_controller, tcpinglist);
@@ -853,15 +862,9 @@ namespace Shadowsocks.View {
                                     }
                                     if (!match)
                                     {
-                                        int insert_index = config.Servers.Count;
-                                        for (int index = config.Servers.Count - 1; index >= 0; --index)
-                                        {
-                                            if (config.Servers[index].group == curGroup)
-                                            {
-                                                insert_index = index + 1;
-                                                break;
-                                            }
-                                        }
+                                        int insert_index = -1;
+                                        if ((insert_index = config.Servers.FindLastIndex(t => t.group == curGroup) + 1) == 0)
+                                            insert_index = config.Servers.Count;
                                         config.Servers.Insert(insert_index, server);
                                         //++count;
                                     }
@@ -870,14 +873,9 @@ namespace Shadowsocks.View {
                             }
                             foreach (KeyValuePair<string, Server> pair in old_servers)
                             {
-                                for (int i = config.Servers.Count - 1; i >= 0; --i)
-                                {
-                                    if (config.Servers[i].id == pair.Key)
-                                    {
-                                        config.Servers.RemoveAt(i);
-                                        break;
-                                    }
-                                }
+                                int index = config.Servers.FindIndex(t => t.id == pair.Key);
+                                if(index!=-1)
+                                    config.Servers.RemoveAt(index);
                             }
                         }
                         int invalidserverindex = -1;
@@ -1143,10 +1141,7 @@ namespace Shadowsocks.View {
                             Server server = config.Servers[i];
                             if(groupname == server.group)
                             {
-                                if (server.enable)
-                                    tmplist.Add(server.id);
-                                else
-                                    server.latency = -1;
+                                tmplist.Add(server.id);
                             }
                         }
 
@@ -1337,6 +1332,7 @@ namespace Shadowsocks.View {
             if (configForm != null)
             {
                 configForm.Activate();
+                configForm.BringToFront();
             }
             else
             {
@@ -1366,6 +1362,7 @@ namespace Shadowsocks.View {
         private void ShowSettingForm() {
             if (settingsForm != null) {
                 settingsForm.Activate();
+                settingsForm.BringToFront();
             }
             else {
                 settingsForm = new SettingsForm(_controller);
@@ -1379,6 +1376,7 @@ namespace Shadowsocks.View {
         private void ShowPortMapForm() {
             if (portMapForm != null) {
                 portMapForm.Activate();
+                portMapForm.BringToFront();
                 portMapForm.Update();
                 if (portMapForm.WindowState == FormWindowState.Minimized) {
                     portMapForm.WindowState = FormWindowState.Normal;
@@ -1404,6 +1402,7 @@ namespace Shadowsocks.View {
         private void ShowServerLogForm() {
             if (serverLogForm != null) {
                 serverLogForm.Activate();
+                serverLogForm.BringToFront();
                 serverLogForm.Update();
                 if (serverLogForm.WindowState == FormWindowState.Minimized) {
                     serverLogForm.WindowState = FormWindowState.Normal;
@@ -1424,6 +1423,7 @@ namespace Shadowsocks.View {
         private void ShowGlobalLogForm() {
             if (logForm != null) {
                 logForm.Activate();
+                logForm.BringToFront();
                 logForm.Update();
                 if (logForm.WindowState == FormWindowState.Minimized) {
                     logForm.WindowState = FormWindowState.Normal;
@@ -1441,6 +1441,7 @@ namespace Shadowsocks.View {
         private void ShowSubscribeSettingForm() {
             if (subScribeForm != null) {
                 subScribeForm.Activate();
+                subScribeForm.BringToFront();
                 subScribeForm.Update();
                 if (subScribeForm.WindowState == FormWindowState.Minimized) {
                     subScribeForm.WindowState = FormWindowState.Normal;
@@ -1622,6 +1623,7 @@ namespace Shadowsocks.View {
             ResetPassword dlg = new ResetPassword();
             dlg.Show();
             dlg.Activate();
+            dlg.BringToFront();
         }
 
         private void AboutItem_Click(object sender, EventArgs e)
@@ -1756,8 +1758,8 @@ namespace Shadowsocks.View {
 
         private void AServerItem_Click(object sender, EventArgs e) {
             MenuItem item = (MenuItem)sender;
+            _controller.DisconnectAllConnections();
             _controller.SelectServerIndex((int)item.Tag);
-            _controller.DisconnectAllConnections(); 
         }
 
         private void CheckUpdate_Click(object sender, EventArgs e)
@@ -1947,17 +1949,15 @@ namespace Shadowsocks.View {
                         Server server = new Server(urls[i], null);
                         if (!server.enable)
                             continue;
-                            int index = -1;
-                            if (i != urls.Count - 1)
-                                index = _controller.AddServer(server, configfrom_open ? configForm.currentSelectedID : null, false);
-                            else
-                                index = _controller.AddServer(server, configfrom_open ? configForm.currentSelectedID : null);
-                            if (index != -1 && listindices.FindIndex(t => t == index + i) == -1)  
-                            {
-                                listindices.Add(index + listindices.Count);
-                            }
-                            else
-                                ;
+                        int index = -1;
+                        if (i != urls.Count - 1)
+                            index = _controller.AddServer(server, configfrom_open ? configForm.currentSelectedID : null, false);
+                        else
+                            index = _controller.AddServer(server, configfrom_open ? configForm.currentSelectedID : null);
+                        if (index != -1 && listindices.FindIndex(t => t == index + i) == -1)  
+                        {
+                            listindices.Add(index + listindices.Count);
+                        }
                     }
                     if (listindices.Count> 0)
                     {
@@ -2193,6 +2193,7 @@ namespace Shadowsocks.View {
             }
             HotkeySettingsForm._IsModified = false;
             hotkeySettingsForm.Activate();
+            hotkeySettingsForm.BringToFront();
         }
 
         void hotkeySettingsForm_FormClosed(object sender, FormClosedEventArgs e)

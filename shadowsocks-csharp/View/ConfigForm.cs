@@ -217,9 +217,10 @@ namespace Shadowsocks.View
                     remarks = txtRemarks.Text,
                     group = txtGroup.Text.Trim(),
                     udp_over_tcp = chkUdpOverTcp.Checked,
-                    latency = settings.Servers[_oldSelectedIndex].latency,
+                    //latency = settings.Servers[_oldSelectedIndex].latency,
                     //obfs_udp = CheckObfsUDP.Checked,
-                    id = settings.Servers[_oldSelectedIndex].id// _SelectedID
+                    id = settings.Servers[_oldSelectedIndex].id,// _SelectedID
+                    enable = settings.Servers[_oldSelectedIndex].enable
                 };
                 Configuration.CheckServer(server);
                 if (settings.Servers[_oldSelectedIndex].server != server.server

@@ -361,7 +361,7 @@ namespace Shadowsocks.Controller
             // though UseShellExecute is set to true now
             // http://stackoverflow.com/questions/10235093/socket-doesnt-close-after-application-exits-if-a-launched-process-is-open
             //bool _firstRun = firstRun;
-            for (int i = 1; i <= 5; ++i)
+            //for (int i = 1; i <= 5; ++i)
             {
                 //_firstRun = false;
                 try
@@ -404,7 +404,7 @@ namespace Shadowsocks.Controller
                         _listener = new Listener(services);
                         _listener.Start(_config, 0);
                     }
-                    break;
+                    //break;
                 }
                 catch (Exception e)
                 {
@@ -419,15 +419,15 @@ namespace Shadowsocks.Controller
                         }
                     }
                     Logging.LogUsefulException(e);
-                    if (firstRun)
+                    //if (firstRun)
                     {
                         ReportError(e);
-                        break;
+                        //break;
                     }
-                    else
-                    {
-                        Thread.Sleep(1000 * i * i);
-                    }
+                    //else
+                    //{
+                    //    Thread.Sleep(1000 * i * i);
+                    //}
                     if (_listener != null)
                     {
                         _listener.Stop();

@@ -246,7 +246,6 @@ namespace Shadowsocks.Util
                     if (index != -1) 
                     {
                         mtListControl.ReleaseMutex();
-                        AllServers[index].latency = -1;
                         AllServers[index].tcpingLatency();
                         mtListControl.WaitOne(-1);
                     }

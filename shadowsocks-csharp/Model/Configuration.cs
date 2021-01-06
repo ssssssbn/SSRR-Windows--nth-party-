@@ -855,7 +855,6 @@ namespace Shadowsocks.Model
     [Serializable]
     public class ServerTrans
     {
-        public long latency;
         public long totalUploadBytes;
         public long totalDownloadBytes;
 
@@ -966,27 +965,6 @@ namespace Shadowsocks.Model
             }
         }
 
-        public void SetLatency(string server, Int64 size)
-        {
-            lock (servers)
-            {
-                if (!servers.ContainsKey(server))
-                    servers.Add(server, new ServerTrans());
-                ((ServerTrans)servers[server]).latency = size;
-            }
-            if (--saveCounter <= 0)
-            {
-                saveCounter = 256;
-                if ((DateTime.Now - saveTime).TotalMinutes > 10)
-                {
-                    lock (servers)
-                    {
-                        Save(this);
-                        saveTime = DateTime.Now;
-                    }
-                }
-            }
-        }
         public void AddtotalUpload(string server, Int64 size)
         {
             lock (servers)
